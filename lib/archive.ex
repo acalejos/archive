@@ -5,7 +5,7 @@ defmodule Archive do
   @moduledoc """
   `Archive` provides Elixir bindings to [`libarchive`](https://github.com/libarchive/libarchive) through the power of the wonderful [`Zigler`](https://hexdocs.pm/zigler/Zig.html) library.
 
-  `Archive` provides a high-level API for interacting with archive files. 
+  `Archive` provides a high-level API for interacting with archive files.
 
   Like `libarchive`, `Archive` treats all files as streams first and foremost, but provides many convenient high-level APIs to make it more natural to work with archive.
 
@@ -16,7 +16,7 @@ defmodule Archive do
 
   ## Reading
 
-  As streams, archives are not conducive to random-access reads or seeks. Once archives are opened and read, they must be closed and reopened to read again. It is often a two-stage process to read an archive, where you read a list of the contents first, then selectively filter which items you want suring a second pass. 
+  As streams, archives are not conducive to random-access reads or seeks. Once archives are opened and read, they must be closed and reopened to read again. It is often a two-stage process to read an archive, where you read a list of the contents first, then selectively filter which items you want suring a second pass.
 
   `Archive` takes care of all resource allocations, initializations, and cleanup for you. Using the high-level API, you only need to provide a mapping function to determine what to do with each entry as it is streamed.
 
@@ -29,7 +29,7 @@ defmodule Archive do
   >   4) Repeatedly call archive_read_next_header to get information about
   >       successive archive entries.  Call archive_read_data to extract
   >      data for entries of interest.
-  >   5) Cleanup archive reader object 
+  >   5) Cleanup archive reader object
 
   The mapping function will accept an `Archive.Entry` struct, which will contain metadata (such as path and size) information about the entry. You can use that information to determine what to do in your function.
 
@@ -100,13 +100,13 @@ defmodule Archive do
   ## Writing
 
   > #### TODO {: .error}
-  > 
+  >
   > `Archive` is still very early in development and does not implement any of the writing API yet.
 
 
   ## `Inspect`
 
-  `Archive` and `Archive.Entry` provide custom implementations for the `Inspect` protocol. 
+  `Archive` and `Archive.Entry` provide custom implementations for the `Inspect` protocol.
 
   When inspecting `Archive`, the following custom options can be supplied to the `custom_options` option of inspect:
 
@@ -148,9 +148,9 @@ defmodule Archive do
 
   > #### Properties and Settings {: .info}
   >
-  > Currently, the properties and settings are not configurable. The default is to support all archive formats (including raw), all compression formats, and not filter any entries. 
-  > 
-  > In the future, `init/2` will accept options for all of these to setup the reader / writer in the appropriate modes 
+  > Currently, the properties and settings are not configurable. The default is to support all archive formats (including raw), all compression formats, and not filter any entries.
+  >
+  > In the future, `init/2` will accept options for all of these to setup the reader / writer in the appropriate modes
   """
   def init(%__MODULE__{} = archive, _opts \\ []) do
     with {:ok, ref} <- Nif.safe_call(&Nif.archive_read_new/0),
@@ -196,7 +196,7 @@ defmodule Archive do
             if Map.get(archive, :format) do
               {archive, element}
             else
-              format = Nif.archive_format(archive.ref) |> Archive.Format.to_atom()
+              format = Nif.archive_format(archive.ref) |> Nif.archiveFormatToAtom()
               {%{archive | format: format}, [format | element]}
             end
 
@@ -349,13 +349,25 @@ defmodule Archive do
 
   defp is_directory?(_), do: false
 
+  @doc false
+  def format_size(size) when is_integer(size) do
+    cond do
+      size < 1024 -> "#{size} B"
+      size < 1024 * 1024 -> "#{Float.round(size / 1024, 2)} KB"
+      size < 1024 * 1024 * 1024 -> "#{Float.round(size / (1024 * 1024), 2)} MB"
+      true -> "#{Float.round(size / (1024 * 1024 * 1024), 2)} GB"
+    end
+  end
+
+  def format_size(_), do: "unknown size"
+
   defimpl Inspect, for: Archive do
     import Inspect.Algebra
 
     @default_depth 3
     @default_breadth 2
 
-    def inspect(%Archive{entries: entries, format: format, ref: ref}, opts) do
+    def inspect(%Archive{entries: entries, format: format}, opts) do
       entries = if is_map(entries), do: entries, else: Archive.hierarchical(entries)
       depth = opts.custom_options[:depth] || @default_depth
       breadth = opts.custom_options[:breadth] || @default_breadth
@@ -363,10 +375,7 @@ defmodule Archive do
       format_str = if format, do: "[#{format}]", else: ""
 
       cond do
-        is_nil(ref) ->
-          concat(["#Archive", format_str, "<", color("uninitialized", :red, opts), ">"])
-
-        is_nil(entries) ->
+        is_nil(entries) || entries == [] || entries == %{} ->
           concat(["#Archive", format_str, "<", color("initialized", :yellow, opts), ">"])
 
         true ->
@@ -380,7 +389,7 @@ defmodule Archive do
                 opts
               ),
               ", ",
-              color(Archive.Format.format_size(summary.total_size), :magenta, opts)
+              color(Archive.format_size(summary.total_size), :magenta, opts)
             ])
 
           separator = color(String.duplicate("─", 15), :grey, opts)
@@ -438,7 +447,7 @@ defmodule Archive do
         String.duplicate("  ", current_depth),
         color(name, :blue, opts),
         " (",
-        color(Archive.Format.format_size(size), :cyan, opts),
+        color(Archive.format_size(size), :cyan, opts),
         ")"
       ])
     end
@@ -454,7 +463,7 @@ defmodule Archive do
         " (",
         color("#{summary.total_entries} items", :blue, opts),
         ", ",
-        color(Archive.Format.format_size(summary.total_size), :cyan, opts),
+        color(Archive.format_size(summary.total_size), :cyan, opts),
         ")",
         if(sub_tree != empty(), do: concat([line(), sub_tree]), else: empty())
       ])

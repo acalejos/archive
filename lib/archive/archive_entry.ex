@@ -34,7 +34,7 @@ defmodule Archive.Entry do
 
     def inspect(entry, opts) do
       loaded = if entry.data, do: "loaded", else: "not loaded"
-      size = Archive.Format.format_size(entry.size)
+      size = Archive.format_size(entry.size)
 
       concat([
         "#Archive.Entry<",
