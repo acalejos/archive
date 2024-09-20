@@ -24,7 +24,28 @@ defmodule Archive.Setup do
 end
 
 defmodule Archive.Nif do
+  @moduledoc """
+  > #### Proceed With Caution {: .error}
+  >
+  > The `Archive.Nif` module contains the functions that directly interact with `libarchive`.
+  > It is generally discouraged to interact with this library directly. If you find you need
+  > functionality not supported in the higher-level APIs, consider opening an issue first
+  > if the feature would be generally applicable or desireable.
+
+  `Archive.Nif` provides direct `Elixir` bindings to the `libarchive` C API. Most of the functions
+  in this module are 1-to-1 mappings to the C API equivalent functions.
+
+  These functions work directly with references, rather than `Archive` or `Archive.Entry` structs.
+
+  As long as you use the `ArchiveResource` and `ArchiveEntryResource` reference types, they will
+  be managed and garbage-collected by this module once created.
+
+  Most functions in this module may raise `ErlangError` on failure. You should invoke **most** of
+  these functions using `Archive.Nif.safe_call/2` to catch the errors and return them as `:ok` or
+  an `{:error, reason}` tuple
+  """
   use Archive.Setup
+  import Bitwise
 
   ~Z"""
   const c = @cImport({
@@ -129,6 +150,65 @@ defmodule Archive.Nif do
       }
   };
 
+  const FileKind = enum(c_uint) {
+      block_device = c.S_IFBLK,
+      character_device = c.S_IFCHR,
+      directory = c.S_IFDIR,
+      named_pipe = c.S_IFIFO,
+      sym_link = c.S_IFLNK,
+      file = c.S_IFREG,
+      unix_domain_socket = c.S_IFSOCK,
+      unknown = 0,
+  };
+
+  const FileMode = enum(c_uint) {
+      irwxu = c.S_IRWXU,
+      irusr = c.S_IRUSR,
+      iwusr = c.S_IWUSR,
+      ixusr = c.S_IXUSR,
+      irwxg = c.S_IRWXG,
+      irgrp = c.S_IRGRP,
+      iwgrp = c.S_IWGRP,
+      ixgrp = c.S_IXGRP,
+      irwxo = c.S_IRWXO,
+      iroth = c.S_IROTH,
+      iwoth = c.S_IWOTH,
+      ixoth = c.S_IXOTH,
+      isuid = c.S_ISUID,
+      isgid = c.S_ISGID,
+      isvtx = c.S_ISVTX,
+  };
+
+  pub fn archive_entry_stat(e: ArchiveEntryResource) beam.term {
+      const c_stat = c.archive_entry_stat(e.unpack());
+      if (c_stat == null) {
+          return beam.make_error_pair("failed_to_get_stat", .{});
+      }
+      const stat = c_stat.*;
+
+      return beam.make(.{
+          .inode = stat.st_ino,
+          .size = @as(u64, @bitCast(stat.st_size)),
+          .mode = stat.st_mode,
+          .kind = getFileKind(stat.st_mode),
+          .atime_sec = stat.st_atimespec.tv_sec,
+          .atime_nsec = stat.st_atimespec.tv_nsec,
+          .mtime_sec = stat.st_mtimespec.tv_sec,
+          .mtime_nsec = stat.st_mtimespec.tv_nsec,
+          .ctime_sec = stat.st_ctimespec.tv_sec,
+          .ctime_nsec = stat.st_ctimespec.tv_nsec,
+          .nlinks = c.archive_entry_nlink(e.unpack()),
+          .devmajor = c.archive_entry_devmajor(e.unpack()),
+          .devminor = c.archive_entry_devminor(e.unpack()),
+          .gid = c.archive_entry_gid(e.unpack()),
+          .uid = c.archive_entry_uid(e.unpack()),
+      }, .{});
+  }
+
+  fn getFileKind(mode: c_uint) FileKind {
+      return std.meta.intToEnum(FileKind, mode & c.S_IFMT) catch .unknown;
+  }
+
   pub fn archiveFilterToInt(filter: ArchiveFilter) i32 {
       return @intFromEnum(filter);
   }
@@ -173,7 +253,13 @@ defmodule Archive.Nif do
   }
 
   pub fn archive_read_open_filename(a: ArchiveResource, filename: []u8, block_size: usize) !void {
-      const result = c.archive_read_open_filename(a.unpack(), filename.ptr, block_size);
+      //   Have to manually null-terminate this for the C API
+      // Zig's []u8 hold length information, so they aren't necessarily null-terminated
+      var slice = try beam.allocator.alloc(u8, filename.len + 1);
+      defer beam.allocator.free(slice);
+      @memcpy(slice[0..filename.len], filename);
+      slice[filename.len] = 0;
+      const result = c.archive_read_open_filename(a.unpack(), slice.ptr, block_size);
       try checkArchiveResult(result);
   }
 
@@ -261,6 +347,22 @@ defmodule Archive.Nif do
 
   @errors [:ArchiveEof, :ArchiveFailed, :ArchiveWarn, :ArchiveFatal]
 
+  def get_error_string(ref) when is_reference(ref) do
+    err_string = archive_error_string(ref)
+
+    err_string =
+      unless is_nil(err_string) do
+        err_string
+        |> :binary.bin_to_list()
+        |> Enum.filter(&(&1 < 128))
+        |> List.to_string()
+      end
+
+    archive_clear_error(ref)
+
+    err_string
+  end
+
   def safe_call(fun, ref \\ nil) do
     try do
       case fun.() do
@@ -272,7 +374,7 @@ defmodule Archive.Nif do
       e in [ErlangError] ->
         error_string =
           if ref do
-            archive_error_string(ref)
+            get_error_string(ref)
           end
 
         case e do
@@ -284,4 +386,54 @@ defmodule Archive.Nif do
         end
     end
   end
+
+  @doc false
+  def unwrap!(:ok), do: :ok
+  def unwrap!({:ok, value}), do: value
+  def unwrap!({:error, reason}), do: raise(reason)
+  def unwrap(_), do: raise("Bad value")
+
+  @doc false
+  def to_file_stat(zig_stat) do
+    %File.Stat{
+      access: get_access(zig_stat.mode),
+      atime: convert_time(zig_stat.atime_sec, zig_stat.atime_nsec),
+      ctime: convert_time(zig_stat.ctime_sec, zig_stat.ctime_nsec),
+      gid: zig_stat.gid,
+      inode: zig_stat.inode,
+      links: zig_stat.nlinks,
+      major_device: zig_stat.devmajor,
+      minor_device: zig_stat.devminor,
+      mode: zig_stat.mode,
+      mtime: convert_time(zig_stat.mtime_sec, zig_stat.mtime_nsec),
+      size: zig_stat.size,
+      type: convert_kind(zig_stat.kind),
+      uid: zig_stat.uid
+    }
+  end
+
+  defp get_access(mode) do
+    cond do
+      (mode &&& 0o600) == 0o600 -> :read_write
+      (mode &&& 0o400) == 0o400 -> :read
+      (mode &&& 0o200) == 0o200 -> :write
+      true -> :none
+    end
+  end
+
+  defp convert_time(sec, nsec) do
+    DateTime.from_unix!(sec, :second)
+    |> DateTime.add(nsec, :nanosecond)
+    |> DateTime.to_naive()
+    |> NaiveDateTime.to_erl()
+  end
+
+  defp convert_kind(:block_device), do: :device
+  defp convert_kind(:character_device), do: :device
+  defp convert_kind(:directory), do: :directory
+  defp convert_kind(:named_pipe), do: :other
+  defp convert_kind(:sym_link), do: :symlink
+  defp convert_kind(:file), do: :regular
+  defp convert_kind(:unix_domain_socket), do: :other
+  defp convert_kind(:unknown), do: :other
 end
