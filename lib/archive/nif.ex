@@ -18,7 +18,7 @@ defmodule Archive.Setup do
           include_dirs: [unquote(@include_path)],
           link_lib: unquote(@link_path)
         ],
-        resources: [:ArchiveResource, :ArchiveEntryResource]
+        resources: [:ArchiveReaderResource, :ArchiveWriterResource, :ArchiveEntryResource]
     end
   end
 end
@@ -37,13 +37,14 @@ defmodule Archive.Nif do
 
   These functions work directly with references, rather than `Archive` or `Archive.Entry` structs.
 
-  As long as you use the `ArchiveResource` and `ArchiveEntryResource` reference types, they will
+  As long as you use the `ArchiveReaderResource` and `ArchiveEntryResource` reference types, they will
   be managed and garbage-collected by this module once created.
 
   Most functions in this module may raise `ErlangError` on failure. You should invoke **most** of
   these functions using `Archive.Nif.safe_call/2` to catch the errors and return them as `:ok` or
   an `{:error, reason}` tuple
   """
+  require Logger
   use Archive.Setup
   import Bitwise
 
@@ -61,7 +62,8 @@ defmodule Archive.Nif do
   const enif = @import("erl_nif");
   const root = @import("root");
 
-  pub const ArchiveResource = beam.Resource(*c.archive, root, .{ .Callbacks = ArchiveResourceCallbacks });
+  pub const ArchiveReaderResource = beam.Resource(*c.archive, root, .{ .Callbacks = ArchiveReaderResourceCallbacks });
+  pub const ArchiveWriterResource = beam.Resource(*c.archive, root, .{ .Callbacks = ArchiveWriterResourceCallbacks });
   pub const ArchiveEntryResource = beam.Resource(*c.archive_entry, root, .{ .Callbacks = ArchiveEntryResourceCallbacks });
 
   pub const ArchiveFilter = enum(c_int) {
@@ -103,7 +105,6 @@ defmodule Archive.Nif do
   };
 
   pub const ArchiveFormat = enum(c_int) {
-      base_mask = @intFromEnum(ArchiveBaseFormat.base_mask),
       cpio = @intFromEnum(ArchiveBaseFormat.cpio),
       cpio_posix = @intFromEnum(ArchiveBaseFormat.cpio) | 1,
       cpio_bin_le = @intFromEnum(ArchiveBaseFormat.cpio) | 2,
@@ -138,9 +139,153 @@ defmodule Archive.Nif do
       rar_v5 = @intFromEnum(ArchiveBaseFormat.rar_v5),
   };
 
-  pub const ArchiveResourceCallbacks = struct {
+  pub const Allow = enum {
+      Read,
+      Write,
+      ReadWrite,
+  };
+
+  pub const ArchiveFormatInfo = struct {
+      format: ArchiveFormat,
+      allow: Allow,
+  };
+
+  pub const ArchiveFilterInfo = struct {
+      filter: ArchiveFilter,
+      allow: Allow,
+  };
+
+  pub const archive_format_info = [_]ArchiveFormatInfo{
+      .{ .format = .cpio, .allow = .ReadWrite },
+      .{ .format = .cpio_posix, .allow = .Write },
+      .{ .format = .cpio_bin_le, .allow = .Write },
+      .{ .format = .cpio_bin_be, .allow = .Write },
+      .{ .format = .cpio_svr4_nocrc, .allow = .Write },
+      .{ .format = .cpio_svr4_crc, .allow = .Write },
+      .{ .format = .cpio_afio_large, .allow = .Write },
+      .{ .format = .cpio_pwb, .allow = .Write },
+      .{ .format = .shar, .allow = .Write },
+      .{ .format = .shar_base, .allow = .Write },
+      .{ .format = .shar_dump, .allow = .Write },
+      .{ .format = .tar, .allow = .ReadWrite },
+      .{ .format = .tar_ustar, .allow = .Write },
+      .{ .format = .tar_pax_interchange, .allow = .Write },
+      .{ .format = .tar_pax_restricted, .allow = .Write },
+      .{ .format = .tar_gnutar, .allow = .Write },
+      .{ .format = .iso9660, .allow = .ReadWrite },
+      .{ .format = .iso9660_rockridge, .allow = .Read },
+      .{ .format = .zip, .allow = .ReadWrite },
+      .{ .format = .empty, .allow = .Read },
+      .{ .format = .ar, .allow = .Read },
+      .{ .format = .ar_gnu, .allow = .Read },
+      .{ .format = .ar_bsd, .allow = .Read },
+      .{ .format = .mtree, .allow = .ReadWrite },
+      .{ .format = .raw, .allow = .ReadWrite },
+      .{ .format = .xar, .allow = .ReadWrite },
+      .{ .format = .lha, .allow = .Read },
+      .{ .format = .cab, .allow = .Read },
+      .{ .format = .rar, .allow = .Read },
+      .{ .format = .sevenz, .allow = .ReadWrite },
+      .{ .format = .warc, .allow = .ReadWrite },
+      .{ .format = .rar_v5, .allow = .Read },
+  };
+
+  pub const archive_filter_info = [_]ArchiveFilterInfo{
+      .{ .filter = .none, .allow = .ReadWrite },
+      .{ .filter = .gzip, .allow = .ReadWrite },
+      .{ .filter = .bzip2, .allow = .ReadWrite },
+      .{ .filter = .compress, .allow = .ReadWrite },
+      .{ .filter = .lzma, .allow = .ReadWrite },
+      .{ .filter = .xz, .allow = .ReadWrite },
+      .{ .filter = .uu, .allow = .ReadWrite },
+      .{ .filter = .lzip, .allow = .ReadWrite },
+      .{ .filter = .lrzip, .allow = .ReadWrite },
+      .{ .filter = .lzop, .allow = .ReadWrite },
+      .{ .filter = .grzip, .allow = .ReadWrite },
+      .{ .filter = .lz4, .allow = .ReadWrite },
+      .{ .filter = .zstd, .allow = .ReadWrite },
+      .{ .filter = .rpm, .allow = .Read },
+  };
+
+  fn TableNames(comptime table: anytype, comptime getFormat: fn (info: @TypeOf(table[0])) []const u8, comptime condition: fn (info: @TypeOf(table[0])) bool) []const []const u8 {
+      @setEvalBranchQuota(10000); // Increase if needed for larger arrays
+
+      return comptime blk: {
+          var result: []const []const u8 = &[_][]const u8{};
+          for (table) |info| {
+              if (condition(info)) {
+                  result = result ++ [_][]const u8{getFormat(info)};
+              }
+          }
+          break :blk result;
+      };
+  }
+
+  pub const format_readable_names = TableNames(archive_format_info, struct {
+      fn getFormat(info: @TypeOf(archive_format_info[0])) []const u8 {
+          return @tagName(info.format);
+      }
+  }.getFormat, struct {
+      fn isReadable(info: @TypeOf(archive_format_info[0])) bool {
+          return info.allow == .Read or info.allow == .ReadWrite;
+      }
+  }.isReadable);
+
+  pub const format_writable_names = TableNames(archive_format_info, struct {
+      fn getFormat(info: @TypeOf(archive_format_info[0])) []const u8 {
+          return @tagName(info.format);
+      }
+  }.getFormat, struct {
+      fn isWritable(info: @TypeOf(archive_format_info[0])) bool {
+          return info.allow == .Write or info.allow == .ReadWrite;
+      }
+  }.isWritable);
+
+  pub const filter_readable_names = TableNames(archive_filter_info, struct {
+      fn getFormat(info: @TypeOf(archive_filter_info[0])) []const u8 {
+          return @tagName(info.filter);
+      }
+  }.getFormat, struct {
+      fn isReadable(info: @TypeOf(archive_filter_info[0])) bool {
+          return info.allow == .Read or info.allow == .ReadWrite;
+      }
+  }.isReadable);
+
+  pub const filter_writable_names = TableNames(archive_filter_info, struct {
+      fn getFormat(info: @TypeOf(archive_filter_info[0])) []const u8 {
+          return @tagName(info.filter);
+      }
+  }.getFormat, struct {
+      fn isWritable(info: @TypeOf(archive_filter_info[0])) bool {
+          return info.allow == .Write or info.allow == .ReadWrite;
+      }
+  }.isWritable);
+
+  pub fn listReadableFormats() []const []const u8 {
+      return format_readable_names;
+  }
+
+  pub fn listReadableFilters() []const []const u8 {
+      return filter_readable_names;
+  }
+
+  pub fn listWritableFormats() []const []const u8 {
+      return format_writable_names;
+  }
+
+  pub fn listWritableFilters() []const []const u8 {
+      return filter_writable_names;
+  }
+
+  pub const ArchiveReaderResourceCallbacks = struct {
       pub fn dtor(a: **c.archive) void {
           _ = c.archive_read_free(a.*);
+      }
+  };
+
+  pub const ArchiveWriterResourceCallbacks = struct {
+      pub fn dtor(a: **c.archive) void {
+          _ = c.archive_write_free(a.*);
       }
   };
 
@@ -179,16 +324,58 @@ defmodule Archive.Nif do
       isvtx = c.S_ISVTX,
   };
 
-  pub fn archive_entry_stat(e: ArchiveEntryResource) beam.term {
+  pub const CustomStat = struct {
+      inode: i64,
+      size: i64,
+      mode: u16,
+      kind: FileKind,
+      atime_sec: i64,
+      atime_nsec: i64,
+      mtime_sec: i64,
+      mtime_nsec: i64,
+      ctime_sec: i64,
+      ctime_nsec: i64,
+      nlinks: c_uint,
+      devmajor: c_int,
+      devminor: c_int,
+      gid: i64,
+      uid: i64,
+  };
+
+  pub fn archive_entry_copy_stat(e: ArchiveEntryResource, stat: CustomStat) void {
+      std.debug.print("My struct: {any}\n", .{stat});
+      c.archive_entry_set_ino(e.unpack(), stat.inode);
+      c.archive_entry_set_size(e.unpack(), stat.size);
+      c.archive_entry_set_mode(e.unpack(), stat.mode);
+
+      if (stat.kind != .unknown) {
+          c.archive_entry_set_filetype(e.unpack(), @intFromEnum(stat.kind));
+      }
+
+      c.archive_entry_set_atime(e.unpack(), stat.atime_sec, stat.atime_nsec);
+      c.archive_entry_set_mtime(e.unpack(), stat.mtime_sec, stat.mtime_nsec);
+      c.archive_entry_set_ctime(e.unpack(), stat.ctime_sec, stat.ctime_nsec);
+
+      c.archive_entry_set_nlink(e.unpack(), stat.nlinks);
+      c.archive_entry_set_devmajor(e.unpack(), stat.devmajor);
+      c.archive_entry_set_devminor(e.unpack(), stat.devminor);
+      c.archive_entry_set_gid(e.unpack(), stat.gid);
+      c.archive_entry_set_uid(e.unpack(), stat.uid);
+  }
+
+  fn getFileKind(mode: c_uint) FileKind {
+      return std.meta.intToEnum(FileKind, mode & c.S_IFMT) catch .unknown;
+  }
+  pub fn archive_entry_stat(e: ArchiveEntryResource) !CustomStat {
       const c_stat = c.archive_entry_stat(e.unpack());
       if (c_stat == null) {
-          return beam.make_error_pair("failed_to_get_stat", .{});
+          return error.StatError;
       }
       const stat = c_stat.*;
 
-      return beam.make(.{
-          .inode = stat.st_ino,
-          .size = @as(u64, @bitCast(stat.st_size)),
+      return CustomStat{
+          .inode = @as(i64, @bitCast(stat.st_ino)),
+          .size = @as(i64, @bitCast(stat.st_size)),
           .mode = stat.st_mode,
           .kind = getFileKind(stat.st_mode),
           .atime_sec = stat.st_atimespec.tv_sec,
@@ -202,14 +389,10 @@ defmodule Archive.Nif do
           .devminor = c.archive_entry_devminor(e.unpack()),
           .gid = c.archive_entry_gid(e.unpack()),
           .uid = c.archive_entry_uid(e.unpack()),
-      }, .{});
+      };
   }
 
-  fn getFileKind(mode: c_uint) FileKind {
-      return std.meta.intToEnum(FileKind, mode & c.S_IFMT) catch .unknown;
-  }
-
-  pub fn archiveFilterToInt(filter: ArchiveFilter) i32 {
+  pub fn archiveFilterToInt(filter: ArchiveFilter) c_int {
       return @intFromEnum(filter);
   }
 
@@ -217,7 +400,7 @@ defmodule Archive.Nif do
       return @enumFromInt(filter);
   }
 
-  pub fn archiveFormatToInt(format: ArchiveFormat) i32 {
+  pub fn archiveFormatToInt(format: ArchiveFormat) c_int {
       return @intFromEnum(format);
   }
 
@@ -236,23 +419,31 @@ defmodule Archive.Nif do
       }
   }
 
-  pub fn archive_read_new() !ArchiveResource {
+  pub fn archive_read_new() !ArchiveReaderResource {
       const a: ?*c.archive = c.archive_read_new();
       return if (a) |non_null_a|
-          ArchiveResource.create(non_null_a, .{})
+          ArchiveReaderResource.create(non_null_a, .{})
       else
           error.archiveEntry;
   }
 
-  pub fn archive_read_support_filter_all(a: ArchiveResource) !void {
+  pub fn archive_write_new() !ArchiveWriterResource {
+      const a: ?*c.archive = c.archive_write_new();
+      return if (a) |non_null_a|
+          ArchiveWriterResource.create(non_null_a, .{})
+      else
+          error.archiveEntry;
+  }
+
+  pub fn archive_read_support_filter_all(a: ArchiveReaderResource) !void {
       try checkArchiveResult(c.archive_read_support_filter_all(a.unpack()));
   }
 
-  pub fn archive_read_support_format_all(a: ArchiveResource) !void {
+  pub fn archive_read_support_format_all(a: ArchiveReaderResource) !void {
       try checkArchiveResult(c.archive_read_support_format_all(a.unpack()));
   }
 
-  pub fn archive_read_open_filename(a: ArchiveResource, filename: []u8, block_size: usize) !void {
+  pub fn archive_read_open_filename(a: ArchiveReaderResource, filename: []u8, block_size: usize) !void {
       //   Have to manually null-terminate this for the C API
       // Zig's []u8 hold length information, so they aren't necessarily null-terminated
       var slice = try beam.allocator.alloc(u8, filename.len + 1);
@@ -263,16 +454,25 @@ defmodule Archive.Nif do
       try checkArchiveResult(result);
   }
 
-  pub fn archive_read_open_memory(a: ArchiveResource, buf: []const u8) !void {
+  pub fn archive_write_open_filename(a: ArchiveWriterResource, filename: []u8) !void {
+      var slice = try beam.allocator.alloc(u8, filename.len + 1);
+      defer beam.allocator.free(slice);
+      @memcpy(slice[0..filename.len], filename);
+      slice[filename.len] = 0;
+      const result = c.archive_write_open_filename(a.unpack(), slice.ptr);
+      try checkArchiveResult(result);
+  }
+
+  pub fn archive_read_open_memory(a: ArchiveReaderResource, buf: []const u8) !void {
       const result = c.archive_read_open_memory(a.unpack(), buf.ptr, buf.len);
       try checkArchiveResult(result);
   }
 
-  pub fn archive_format_name(a: ArchiveResource) [*c]u8 {
+  pub fn archive_format_name(a: ArchiveReaderResource) [*c]u8 {
       return @constCast(c.archive_format_name(a.unpack()));
   }
 
-  pub fn archive_file_count(a: ArchiveResource) i32 {
+  pub fn archive_file_count(a: ArchiveReaderResource) i32 {
       return c.archive_file_count(a.unpack());
   }
 
@@ -284,22 +484,30 @@ defmodule Archive.Nif do
           error.archiveEntry;
   }
 
-  pub fn archive_read_next_header(a: ArchiveResource, e: ArchiveEntryResource) !void {
+  pub fn archive_read_next_header(a: ArchiveReaderResource, e: ArchiveEntryResource) !void {
       try checkArchiveResult(c.archive_read_next_header2(a.unpack(), e.unpack()));
+  }
+
+  pub fn archive_write_header(a: ArchiveWriterResource, e: ArchiveEntryResource) !void {
+      try checkArchiveResult(c.archive_write_header(a.unpack(), e.unpack()));
   }
   pub fn archive_entry_pathname(e: ArchiveEntryResource) [*c]u8 {
       return @constCast(c.archive_entry_pathname(e.unpack()));
   }
 
-  pub fn archive_error_string(a: ArchiveResource) [*c]u8 {
+  pub fn archive_entry_set_pathname(e: ArchiveEntryResource, pathname: [*c]const u8) void {
+      return c.archive_entry_set_pathname(e.unpack(), pathname);
+  }
+
+  pub fn archive_error_string(a: ArchiveReaderResource) [*c]u8 {
       return @constCast(c.archive_error_string(a.unpack()));
   }
 
-  pub fn archive_clear_error(a: ArchiveResource) void {
+  pub fn archive_clear_error(a: ArchiveReaderResource) void {
       c.archive_clear_error(a.unpack());
   }
 
-  pub fn archive_format(a: ArchiveResource) i32 {
+  pub fn archive_format(a: ArchiveReaderResource) i32 {
       return c.archive_format(a.unpack());
   }
 
@@ -307,19 +515,23 @@ defmodule Archive.Nif do
       return c.archive_entry_size(e.unpack());
   }
 
-  pub fn archive_read_close(a: ArchiveResource) !void {
+  pub fn archive_read_close(a: ArchiveReaderResource) !void {
       try checkArchiveResult(c.archive_read_close(a.unpack()));
   }
 
-  pub fn archive_read_support_format_raw(a: ArchiveResource) !void {
+  pub fn archive_write_close(a: ArchiveWriterResource) !void {
+      try checkArchiveResult(c.archive_write_close(a.unpack()));
+  }
+
+  pub fn archive_read_support_format_raw(a: ArchiveReaderResource) !void {
       try checkArchiveResult(c.archive_read_support_format_raw(a.unpack()));
   }
 
-  pub fn archive_read_support_compression_all(a: ArchiveResource) !void {
+  pub fn archive_read_support_compression_all(a: ArchiveReaderResource) !void {
       try checkArchiveResult(c.archive_read_support_compression_all(a.unpack()));
   }
 
-  pub fn archive_read_data(a: ArchiveResource, size: usize) ![]const u8 {
+  pub fn archive_read_data(a: ArchiveReaderResource, size: usize) ![]const u8 {
       const data = try beam.allocator.alloc(u8, size);
       defer beam.allocator.free(data);
 
@@ -332,16 +544,30 @@ defmodule Archive.Nif do
       }
   }
 
-  pub fn archive_read_support_format_by_code(a: ArchiveResource, code: i32) !void {
+  pub fn archive_read_support_format_by_code(a: ArchiveReaderResource, code: c_int) !void {
       try checkArchiveResult(c.archive_read_support_format_by_code(a.unpack(), code));
   }
 
-  pub fn archive_read_support_filter_by_code(a: ArchiveResource, code: i32) !void {
+  pub fn archive_read_support_filter_by_code(a: ArchiveReaderResource, code: c_int) !void {
       try checkArchiveResult(c.archive_read_support_filter_by_code(a.unpack(), code));
   }
 
-  pub fn archive_read_format_capabilities(a: ArchiveResource) i32 {
+  pub fn archive_read_format_capabilities(a: ArchiveReaderResource) i32 {
       return c.archive_read_format_capabilities(a.unpack());
+  }
+
+  pub fn archive_write_add_filter(a: ArchiveWriterResource, code: c_int) !void {
+      try checkArchiveResult(c.archive_write_add_filter(a.unpack(), code));
+  }
+
+  pub fn archive_write_set_format(a: ArchiveWriterResource, code: c_int) !void {
+      try checkArchiveResult(c.archive_write_set_format(a.unpack(), code));
+  }
+
+  pub fn archive_entry_clear(e: ArchiveEntryResource) !void {
+      const orig = e.unpack();
+      const cleared = c.archive_entry_clear(orig) orelse return error.ArchiveEntryClearFailed;
+      e.update(cleared);
   }
   """
 
@@ -378,12 +604,31 @@ defmodule Archive.Nif do
           end
 
         case e do
+          %{original: :ArchiveWarn} ->
+            if error_string, do: Logger.info(error_string)
+            :ok
+
           %{original: error} when error in @errors ->
             {:error, error_string || error}
 
-          _ ->
-            {:error, error_string || e.reason}
+          %{reason: reason} ->
+            {:error, error_string || reason}
+
+          %{message: message} ->
+            {:error, error_string || message}
         end
+    end
+  end
+
+  defmacro call(func) do
+    quote do
+      safe_call(fn -> unquote(func) end)
+    end
+  end
+
+  defmacro call(func, ref) do
+    quote do
+      safe_call(fn -> unquote(func) end, unquote(ref))
     end
   end
 
@@ -392,6 +637,57 @@ defmodule Archive.Nif do
   def unwrap!({:ok, value}), do: value
   def unwrap!({:error, reason}), do: raise(reason)
   def unwrap(_), do: raise("Bad value")
+
+  def list_all(:formats, :read), do: listReadableFormats() |> Enum.map(&String.to_atom/1)
+  def list_all(:filters, :read), do: listReadableFilters() |> Enum.map(&String.to_atom/1)
+  def list_all(:formats, :write), do: listWritableFormats() |> Enum.map(&String.to_atom/1)
+  def list_all(:filters, :write), do: listWritableFilters() |> Enum.map(&String.to_atom/1)
+
+  def file_stat_to_zig_map(%File.Stat{} = stat) do
+    %{
+      inode: convert_integer(stat.inode),
+      size: convert_integer(stat.size),
+      mode: convert_integer(stat.mode),
+      kind: convert_type(stat.type),
+      atime_sec: extract_seconds(stat.atime),
+      atime_nsec: extract_nanoseconds(stat.atime),
+      mtime_sec: extract_seconds(stat.mtime),
+      mtime_nsec: extract_nanoseconds(stat.mtime),
+      ctime_sec: extract_seconds(stat.ctime),
+      ctime_nsec: extract_nanoseconds(stat.ctime),
+      nlinks: convert_integer(stat.links),
+      devmajor: convert_integer(stat.major_device),
+      devminor: convert_integer(stat.minor_device),
+      gid: convert_integer(stat.gid),
+      uid: convert_integer(stat.uid)
+    }
+  end
+
+  defp convert_type(:device), do: :block_device
+  defp convert_type(:directory), do: :directory
+  defp convert_type(:regular), do: :file
+  defp convert_type(:symlink), do: :sym_link
+  defp convert_type(_), do: :unknown
+
+  defp convert_integer(:undefined), do: 0
+  defp convert_integer(value) when is_integer(value), do: value
+  defp convert_integer(_), do: 0
+
+  defp extract_seconds(:undefined), do: 0
+
+  defp extract_seconds({{year, month, day}, {hour, minute, second}}) do
+    :calendar.datetime_to_gregorian_seconds({{year, month, day}, {hour, minute, second}}) -
+      62_167_219_200
+  end
+
+  defp extract_seconds(unix_timestamp) when is_integer(unix_timestamp), do: unix_timestamp
+  defp extract_seconds(_), do: 0
+
+  defp extract_nanoseconds(:undefined), do: 0
+  # Calendar format doesn't include nanoseconds
+  defp extract_nanoseconds({{_, _, _}, {_, _, _}}), do: 0
+  # For integer timestamps, we don't have nanosecond precision
+  defp extract_nanoseconds(_), do: 0
 
   @doc false
   def to_file_stat(zig_stat) do
@@ -436,4 +732,52 @@ defmodule Archive.Nif do
   defp convert_kind(:file), do: :regular
   defp convert_kind(:unix_domain_socket), do: :other
   defp convert_kind(:unknown), do: :other
+
+  defmacro __using__(opts) do
+    role = Keyword.fetch!(opts, :as)
+
+    role =
+      case role do
+        :reader ->
+          :read
+
+        :writer ->
+          :write
+
+        :entry ->
+          :entry
+
+        _ ->
+          raise ArgumentError,
+                "Role must be either ':reader' or ':writer', or ':entry' when using #{__MODULE__}, got #{inspect(role)}"
+      end
+
+    imports = [unwrap!: 1, call: 1, call: 2, safe_call: 2, safe_call: 1]
+
+    imports =
+      imports ++
+        (__MODULE__.__info__(:functions)
+         |> Enum.filter(fn {k, _v} ->
+           Atom.to_string(k) |> String.starts_with?("archive_#{Atom.to_string(role)}")
+         end))
+
+    archive =
+      if role in [:read, :write] do
+        formats = list_all(:formats, role)
+        filters = list_all(:filters, role)
+        formats_key = "#{Atom.to_string(role)}_formats" |> String.to_atom()
+        filters_key = "#{Atom.to_string(role)}_filters" |> String.to_atom()
+
+        quote do
+          Module.put_attribute(__MODULE__, unquote(formats_key), unquote(formats))
+          Module.put_attribute(__MODULE__, unquote(filters_key), unquote(filters))
+        end
+      end
+
+    quote do
+      alias Archive.Nif
+      import Archive.Nif, only: unquote(imports)
+      unquote(archive)
+    end
+  end
 end

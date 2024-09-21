@@ -1,9 +1,4 @@
 defmodule Archive do
-  alias Archive.Nif
-  alias Archive.Entry
-
-  import Archive.Nif, only: [unwrap!: 1]
-
   @moduledoc """
   `Archive` provides Elixir bindings to [`libarchive`](https://github.com/libarchive/libarchive) through the power of the wonderful [`Zigler`](https://hexdocs.pm/zigler/Zig.html) library.
 
@@ -115,9 +110,9 @@ defmodule Archive do
 
   ## `Inspect`
 
-  `Archive` and `Archive.Entry` provide custom implementations for the `Inspect` protocol.
+  `Archive.Reader`, `Archive.Writer`, and `Archive.Entry` provide custom implementations for the `Inspect` protocol.
 
-  When inspecting `Archive`, the following custom options can be supplied to the `custom_options` option of inspect:
+  When inspecting `Archive.{Reader, Writer}`, the following custom options can be supplied to the `custom_options` option of inspect:
 
   * `:depth` - Depth of directories to display. Defaults to 3.
   * `:breadth` - Breadth of items to display. Defaults to 2.
@@ -125,11 +120,11 @@ defmodule Archive do
   ### Examples
 
   ```elixir
-  IO.inspect(%Archive{} = a, custom_options: [depth: 3, breadth: 2])
+  IO.inspect(%Archive.Reader{} = a, custom_options: [depth: 3, breadth: 2])
   ```
 
   ```
-  #Archive[zip]<
+  #Reader[zip]<
   147 entries (40 loaded), 506.0 KB
   ───────────────
     .editorconfig (166 B)
@@ -140,283 +135,15 @@ defmodule Archive do
   >
   ```
   """
-
-  defstruct [:ref, :entries, :format, :description, :entry_ref, total_size: 0]
-
-  @doc """
-  Creates a new `Archive` struct. This must be initialized before any IO operations can occur.
-  """
-  def new() do
-    with {:ok, entry_ref} <- Nif.safe_call(&Nif.archive_entry_new/0) do
-      {:ok, struct!(__MODULE__, entry_ref: entry_ref)}
-    end
-  end
-
-  def new!(), do: new() |> unwrap!()
-
-  @doc """
-  Initializes an `Archive` with the appropriate settings and properties.
-
-  > #### Properties and Settings {: .info}
-  >
-  > Currently, the properties and settings are not configurable. The default is to support all archive formats (including raw), all compression formats, and not filter any entries.
-  >
-  > In the future, `init/2` will accept options for all of these to setup the reader / writer in the appropriate modes
-  """
-  def init(%__MODULE__{} = archive, _opts \\ []) do
-    with {:ok, ref} <- Nif.safe_call(&Nif.archive_read_new/0),
-         :ok <- Nif.safe_call(fn -> Nif.archive_read_support_filter_all(ref) end),
-         :ok <- Nif.safe_call(fn -> Nif.archive_read_support_format_all(ref) end),
-         :ok,
-         Nif.safe_call(fn -> Nif.archive_read_support_format_raw(ref) end) do
-      {:ok, %{archive | ref: ref}}
-    end
-  end
-
-  def init!(%__MODULE__{} = archive, opts \\ []), do: init(archive, opts) |> unwrap!()
-
-  defp stream_archive(init_fn, fun) do
-    Stream.resource(
-      init_fn,
-      fn
-        {%Archive{} = archive, has_info} ->
-          with :ok <-
-                 Nif.safe_call(
-                   fn ->
-                     Nif.archive_read_next_header(archive.ref, archive.entry_ref)
-                   end,
-                   archive.ref
-                 ),
-               {:ok, pathname} <-
-                 Nif.safe_call(fn -> Nif.archive_entry_pathname(archive.entry_ref) end),
-               {:ok, zig_stat} <-
-                 Nif.safe_call(fn -> Nif.archive_entry_stat(archive.entry_ref) end),
-               %File.Stat{} = stat <- Nif.to_file_stat(zig_stat),
-               {:ok, %Entry{} = entry} <- Entry.new(path: pathname, stat: stat) do
-            element = if is_function(fun, 2), do: fun.(entry, archive), else: fun.(entry)
-
-            element =
-              if is_list(element),
-                do: element,
-                else: [element]
-
-            {archive, element} =
-              if has_info do
-                {archive, element}
-              else
-                # This lets us gather metadata information after the first header is read
-                # as a Keyword, we can add to this later if needed
-                info = [
-                  format: Nif.archive_format(archive.ref) |> Nif.archiveFormatToAtom(),
-                  description: Nif.archive_format_name(archive.ref)
-                ]
-
-                {archive, [info | element]}
-              end
-
-            {element, {archive, true}}
-          else
-            {:error, error} when error in [:ArchiveFatal, :ArchiveEof] ->
-              {:halt, archive}
-
-            {:error, reason} ->
-              {:halt, {{:error, reason}, archive}}
-          end
-      end,
-      fn
-        {{:error, _reason}, %Archive{ref: ref}} ->
-          :ok = Archive.Nif.archive_read_close(ref)
-
-        %Archive{ref: ref} ->
-          :ok = Archive.Nif.archive_read_close(ref)
-      end
-    )
-  end
-
-  @doc """
-  Streams the contents of an archive from a file, applying the supplied function to each entry.
-
-  Refer to `read/3` for more information about the supplied function.
-  """
-  def from_file_streaming(%Archive{ref: nil} = archive, filename, fun)
-      when is_binary(filename)
-      when is_function(fun, 2) or is_function(fun, 1) do
-    init_fn = fn ->
-      with true <- File.regular?(filename),
-           {:ok, %Archive{ref: ref} = archive} <- init(archive),
-           :ok <-
-             Nif.safe_call(
-               fn ->
-                 Nif.archive_read_open_filename(ref, filename, 10240)
-               end,
-               archive.ref
-             ) do
-        {archive, false}
-      else
-        false ->
-          {:error, "Bad file"}
-
-        {:error, error} ->
-          {:error, error}
-      end
-    end
-
-    stream_archive(init_fn, fun)
-  end
-
-  def from_file_streaming(%Archive{}, _, _),
-    do: {:error, "You must use a new archive with `Archive.new/0`"}
-
-  @doc """
-  Streams the contents of an archive from memory, applying the supplied function to each entry.
-
-  Refer to `read/3` for more information about the supplied function.
-  """
-  def from_memory_streaming(%Archive{ref: nil} = archive, data, fun)
-      when is_binary(data)
-      when is_function(fun, 2) or is_function(fun, 1) do
-    init_fn = fn ->
-      with {:ok, %Archive{ref: ref} = archive} <- init(archive),
-           :ok <-
-             Nif.safe_call(
-               fn ->
-                 Nif.archive_read_open_memory(ref, data)
-               end,
-               archive.ref
-             ) do
-        {archive, false}
-      else
-        {:error, error} ->
-          {:error, error}
-      end
-    end
-
-    stream_archive(init_fn, fun)
-  end
-
-  def from_memory_streaming(%Archive{}, _, _),
-    do: {:error, "You must use a new archive with `Archive.new/0`"}
-
-  @doc """
-  Reads the content of an archive.
-
-  This function populates meta-data about the archive, such as total archive size and archive format.
-
-  ## Options
-  * `:with` - Applies the supplied function to each `Archive.Entry`.
-      Can be either an arity-1 function, which only received the current `Archive.Entry`, or an
-      arity-2 function that recieves the entry and the `Archive`. Defaults to the identity function.
-  * `:as` - How to collect the entries. Can be `:list` or `:map`, where `:map` creates a hierarchical
-      filesystem-like representation of the entries. Defaults to `:map`.
-  """
-  def read(
-        %__MODULE__{} = archive,
-        filename_or_data,
-        opts \\ []
-      ) do
-    opts = Keyword.validate!(opts, as: :map, with: & &1)
-
-    unless opts[:as] in [:map, :list] do
-      raise ArgumentError,
-            "Options `:as` must be either `:map` or `:list`, got #{inspect(opts[:as])}"
-    end
-
-    unless is_function(opts[:with], 2) or is_function(opts[:with], 1) do
-      raise ArgumentError, "Option `:with` must be an arity-2 anonymous function"
-    end
-
-    entries =
-      if File.regular?(filename_or_data) do
-        from_file_streaming(archive, filename_or_data, opts[:with])
-      else
-        from_memory_streaming(archive, filename_or_data, opts[:with])
-      end
-
-    case entries do
-      {:error, _} = e ->
-        e
-
-      _ ->
-        entries =
-          entries
-          |> Enum.to_list()
-          |> Enum.filter(& &1)
-
-        [info | entries] = entries
-
-        total_size =
-          Enum.reduce(entries, 0, fn %Entry{stat: %File.Stat{size: size}}, total ->
-            size + total
-          end)
-
-        fields =
-          info ++
-            [
-              total_size: total_size,
-              entries: if(opts[:as] == :map, do: hierarchical(entries), else: entries)
-            ]
-
-        {:ok,
-         struct!(
-           archive,
-           fields
-         )}
-    end
-  end
-
-  def read!(%__MODULE__{} = archive, filename_or_data, opts \\ []),
-    do: read(archive, filename_or_data, opts) |> unwrap!()
-
-  @doc """
-  Converts a list of `Archive.Entry` to a hierachical map, similar to a filesystem structure.
-  """
-  def hierarchical(entries) when is_list(entries) do
-    entries
-    |> Enum.reduce(%{}, fn entry, acc ->
-      insert_entry(acc, String.split(entry.path, "/", trim: true), entry)
-    end)
-  end
-
-  def hierarchical(_), do: %{}
-
-  defp insert_entry(map, [], _entry), do: map
-
-  defp insert_entry(map, [name], entry) do
-    if is_directory?(entry) do
-      Map.put_new(map, name, %{})
-    else
-      Map.put(map, name, entry)
-    end
-  end
-
-  defp insert_entry(map, [dir | rest], entry) do
-    Map.update(map, dir, insert_entry(%{}, rest, entry), &insert_entry(&1, rest, entry))
-  end
-
-  defp is_directory?(%Archive.Entry{stat: %File.Stat{type: :directory}}), do: true
-
-  defp is_directory?(_), do: false
-
-  @doc false
-  def format_size(size) when is_integer(size) do
-    cond do
-      size < 1024 -> "#{size} B"
-      size < 1024 * 1024 -> "#{Float.round(size / 1024, 2)} KB"
-      size < 1024 * 1024 * 1024 -> "#{Float.round(size / (1024 * 1024), 2)} MB"
-      true -> "#{Float.round(size / (1024 * 1024 * 1024), 2)} GB"
-    end
-  end
-
-  def format_size(_), do: "unknown size"
-
-  defimpl Inspect, for: Archive do
+  defimpl Inspect, for: [Archive.Reader, Archive.Writer] do
     import Inspect.Algebra
 
     @default_depth 3
     @default_breadth 2
 
-    def inspect(%Archive{entries: entries, description: desc}, opts) do
-      entries = if is_map(entries), do: entries, else: Archive.hierarchical(entries)
+    def inspect(%{entries: entries, description: desc} = s, opts) do
+      struct_name = s.__struct__ |> Module.split() |> Enum.reverse() |> hd()
+      entries = if is_map(entries), do: entries, else: Archive.Utils.hierarchical(entries)
       depth = opts.custom_options[:depth] || @default_depth
       breadth = opts.custom_options[:breadth] || @default_breadth
 
@@ -424,7 +151,7 @@ defmodule Archive do
 
       cond do
         is_nil(entries) || entries == [] || entries == %{} ->
-          concat(["#Archive", format_str, "<", color("initialized", :yellow, opts), ">"])
+          concat(["##{struct_name}", format_str, "<", color("initialized", :yellow, opts), ">"])
 
         true ->
           summary = summarize_archive(entries)
@@ -437,14 +164,14 @@ defmodule Archive do
                 opts
               ),
               ", ",
-              color(Archive.format_size(summary.total_size), :magenta, opts)
+              color(Archive.Utils.format_size(summary.total_size), :magenta, opts)
             ])
 
           separator = color(String.duplicate("─", 15), :grey, opts)
           tree = build_tree(entries, depth, breadth, 1, opts)
 
           concat([
-            "#Archive",
+            "##{struct_name}",
             format_str,
             "<",
             nest(concat([line(), header, line(), separator, line(), tree]), 2),
@@ -501,7 +228,7 @@ defmodule Archive do
         String.duplicate("  ", current_depth),
         color(name, :blue, opts),
         " (",
-        color(Archive.format_size(size), :cyan, opts),
+        color(Archive.Utils.format_size(size), :cyan, opts),
         ")",
         if(data, do: "(*)", else: "")
       ])
@@ -522,7 +249,7 @@ defmodule Archive do
           opts
         ),
         ", ",
-        color(Archive.format_size(summary.total_size), :cyan, opts),
+        color(Archive.Utils.format_size(summary.total_size), :cyan, opts),
         ")",
         if(sub_tree != empty(), do: concat([line(), sub_tree]), else: empty())
       ])
