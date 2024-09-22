@@ -499,12 +499,26 @@ defmodule Archive.Nif do
       return c.archive_entry_set_pathname(e.unpack(), pathname);
   }
 
-  pub fn archive_error_string(a: ArchiveReaderResource) [*c]u8 {
-      return @constCast(c.archive_error_string(a.unpack()));
+  fn getArchive(term: beam.term) !*c.archive {
+      if (beam.get(ArchiveReaderResource, term, .{})) |reader| {
+          return reader.unpack();
+      } else |_| {
+          if (beam.get(ArchiveWriterResource, term, .{})) |writer| {
+              return writer.unpack();
+          } else |_| {
+              return error.InvalidArchiveType;
+          }
+      }
   }
 
-  pub fn archive_clear_error(a: ArchiveReaderResource) void {
-      c.archive_clear_error(a.unpack());
+  pub fn archive_error_string(term: beam.term) ![*c]u8 {
+      const archive = try getArchive(term);
+      return @constCast(c.archive_error_string(archive));
+  }
+
+  pub fn archive_clear_error(term: beam.term) !void {
+      const archive = try getArchive(term);
+      c.archive_clear_error(archive);
   }
 
   pub fn archive_format(a: ArchiveReaderResource) i32 {
@@ -568,6 +582,20 @@ defmodule Archive.Nif do
       const orig = e.unpack();
       const cleared = c.archive_entry_clear(orig) orelse return error.ArchiveEntryClearFailed;
       e.update(cleared);
+  }
+
+  pub fn archive_read_refresh(a: ArchiveReaderResource) !void {
+      const orig = a.unpack();
+      _ = c.archive_read_free(orig);
+      const new_archive = c.archive_read_new() orelse return error.ArchiveCreationFailed;
+      a.update(new_archive);
+  }
+
+  pub fn archive_write_refresh(a: ArchiveWriterResource) !void {
+      const orig = a.unpack();
+      _ = c.archive_write_free(orig);
+      const new_archive = c.archive_write_new() orelse return error.ArchiveCreationFailed;
+      a.update(new_archive);
   }
   """
 
@@ -733,51 +761,19 @@ defmodule Archive.Nif do
   defp convert_kind(:unix_domain_socket), do: :other
   defp convert_kind(:unknown), do: :other
 
-  defmacro __using__(opts) do
-    role = Keyword.fetch!(opts, :as)
-
-    role =
-      case role do
-        :reader ->
-          :read
-
-        :writer ->
-          :write
-
-        :entry ->
-          :entry
-
-        _ ->
-          raise ArgumentError,
-                "Role must be either ':reader' or ':writer', or ':entry' when using #{__MODULE__}, got #{inspect(role)}"
-      end
-
-    imports = [unwrap!: 1, call: 1, call: 2, safe_call: 2, safe_call: 1]
-
-    imports =
-      imports ++
-        (__MODULE__.__info__(:functions)
-         |> Enum.filter(fn {k, _v} ->
-           Atom.to_string(k) |> String.starts_with?("archive_#{Atom.to_string(role)}")
-         end))
-
-    archive =
-      if role in [:read, :write] do
-        formats = list_all(:formats, role)
-        filters = list_all(:filters, role)
-        formats_key = "#{Atom.to_string(role)}_formats" |> String.to_atom()
-        filters_key = "#{Atom.to_string(role)}_filters" |> String.to_atom()
-
-        quote do
-          Module.put_attribute(__MODULE__, unquote(formats_key), unquote(formats))
-          Module.put_attribute(__MODULE__, unquote(filters_key), unquote(filters))
-        end
-      end
+  defmacro __using__(_opts) do
+    read_formats = list_all(:formats, :read)
+    read_filters = list_all(:filters, :read)
+    write_formats = list_all(:formats, :write)
+    write_filters = list_all(:filters, :write)
 
     quote do
       alias Archive.Nif
-      import Archive.Nif, only: unquote(imports)
-      unquote(archive)
+      import Archive.Nif, only: [unwrap!: 1, call: 1, call: 2, safe_call: 2, safe_call: 1]
+      @read_formats unquote(read_formats)
+      @read_filters unquote(read_filters)
+      @write_formats unquote(write_formats)
+      @write_filters unquote(write_filters)
     end
   end
 end

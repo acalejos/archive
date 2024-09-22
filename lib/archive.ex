@@ -135,6 +135,13 @@ defmodule Archive do
   >
   ```
   """
+  defstruct [
+    :format,
+    :description,
+    entries: [],
+    total_size: 0
+  ]
+
   defimpl Inspect, for: [Archive.Reader, Archive.Writer] do
     import Inspect.Algebra
 
