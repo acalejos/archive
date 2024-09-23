@@ -135,14 +135,80 @@ defmodule Archive do
   >
   ```
   """
-  import Archive.Nif, only: [unwrap!: 1]
+  alias Archive.Entry
+  alias Archive.Nif
+  import Archive.Nif, only: [unwrap!: 1, call: 1, call: 2, safe_call: 2, safe_call: 1]
 
   defstruct [
     :format,
+    :compression,
     :description,
+    :count,
     entries: [],
     total_size: 0
   ]
+
+  def new(filename_or_path) do
+    struct!(__MODULE__)
+  end
+
+  def update_info(%__MODULE__{} = archive, %Archive.Stream{} = stream) do
+    Enum.reduce_while(stream, archive, fn %Entry{},
+                                          %Archive{
+                                            compression: compression,
+                                            format: format,
+                                            description: description
+                                          } = acc ->
+      format =
+        if format do
+          format
+        else
+          case call(Nif.archive_format(stream.reader.ref)) do
+            {:ok, code} when is_integer(code) ->
+              Nif.archiveFormatToAtom(code)
+
+            _ ->
+              nil
+          end
+        end
+
+      compression =
+        case call(Nif.archive_compression(stream.reader.ref)) do
+          {:ok, code} when is_integer(code) ->
+            Nif.archiveFilterToAtom(code)
+
+          _ ->
+            nil
+        end
+
+      description =
+        if description do
+          description
+        else
+          case call(Nif.archive_format_name(stream.reader.ref)) do
+            {:ok, name} when is_binary(name) ->
+              name
+
+            _ ->
+              nil
+          end
+        end
+
+      acc =
+        %{
+          acc
+          | format: format,
+            description: description,
+            compression: compression
+        }
+
+      if format && description && compression do
+        {:halt, acc}
+      else
+        {:cont, acc}
+      end
+    end)
+  end
 
   def stream(opts \\ []) do
     Archive.Stream.new(opts)
