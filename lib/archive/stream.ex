@@ -154,10 +154,7 @@ defmodule Archive.Stream do
       [
         archive.reader &&
           {archive.reader.filters, &Nif.archiveFilterToInt/1,
-           fn a, b ->
-             IO.puts("Adding filter Code #{b}")
-             Nif.archive_read_support_filter_by_code(a, b)
-           end, archive.reader.ref},
+           &Nif.archive_read_support_filter_by_code/2, archive.reader.ref},
         archive.writer &&
           {archive.writer.format, &Nif.archiveFormatToInt/1, &Nif.archive_write_set_format/2,
            archive.writer.ref},
