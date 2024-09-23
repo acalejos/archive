@@ -35,17 +35,22 @@ libarchive: $(LIBARCHIVE_SRC_DIR)
 ifeq ($(LIBARCHIVE_INSTALLED),no)
 	@echo "Building libarchive..."
 	cd $(LIBARCHIVE_SRC_DIR) && \
-	./configure --prefix=$(MIX_APP_PATH)/priv/$(MIX_TARGET) --disable-bsdtar --disable-bsdcpio && \
+	./configure \
+		--prefix=$(MIX_APP_PATH)/priv/$(MIX_TARGET) \
+		--disable-bsdtar \
+		--disable-bsdcpio \
+		CPPFLAGS="-I/opt/homebrew/include" \
+		LDFLAGS="-L/opt/homebrew/lib" && \
 	make && \
-	make install
+	make -j install
 	@echo "Build and installation completed."
 else
 	@echo "libarchive is already installed. Skipping build."
 endif
 
-# Clean up
+#Clean up
 clean:
 	rm -rf $(BUILD_DIR)/libarchive-*
-	rm -rf $(MIX_APP_PATH)/priv/lib $(MIX_APP_PATH)/priv/include
+	rm -rf $(MIX_APP_PATH)/priv/$(MIX_TARGET)/lib $(MIX_APP_PATH)/priv/include
 
 .PHONY: all libarchive clean

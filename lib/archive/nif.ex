@@ -84,15 +84,30 @@ defmodule Archive.Nif do
       zstd = c.ARCHIVE_FILTER_ZSTD,
   };
 
-  pub const ArchiveBaseFormat = enum(c_int) {
-      base_mask = c.ARCHIVE_FORMAT_BASE_MASK,
+  pub const ArchiveFormat = enum(c_int) {
       cpio = c.ARCHIVE_FORMAT_CPIO,
+      cpio_posix = c.ARCHIVE_FORMAT_CPIO_POSIX,
+      cpio_bin_le = c.ARCHIVE_FORMAT_CPIO_BIN_LE,
+      cpio_bin_be = c.ARCHIVE_FORMAT_CPIO_BIN_BE,
+      cpio_svr4_nocrc = c.ARCHIVE_FORMAT_CPIO_SVR4_NOCRC,
+      cpio_svr4_crc = c.ARCHIVE_FORMAT_CPIO_SVR4_CRC,
+      cpio_afio_large = c.ARCHIVE_FORMAT_CPIO_AFIO_LARGE,
+      cpio_pwb = c.ARCHIVE_FORMAT_CPIO_PWB,
       shar = c.ARCHIVE_FORMAT_SHAR,
+      shar_base = c.ARCHIVE_FORMAT_SHAR_BASE,
+      shar_dump = c.ARCHIVE_FORMAT_SHAR_DUMP,
       tar = c.ARCHIVE_FORMAT_TAR,
+      tar_ustar = c.ARCHIVE_FORMAT_TAR_USTAR,
+      tar_pax_interchange = c.ARCHIVE_FORMAT_TAR_PAX_INTERCHANGE,
+      tar_pax_restricted = c.ARCHIVE_FORMAT_TAR_PAX_RESTRICTED,
+      tar_gnutar = c.ARCHIVE_FORMAT_TAR_GNUTAR,
       iso9660 = c.ARCHIVE_FORMAT_ISO9660,
+      iso9660_rockridge = c.ARCHIVE_FORMAT_ISO9660_ROCKRIDGE,
       zip = c.ARCHIVE_FORMAT_ZIP,
       empty = c.ARCHIVE_FORMAT_EMPTY,
       ar = c.ARCHIVE_FORMAT_AR,
+      ar_gnu = c.ARCHIVE_FORMAT_AR_GNU,
+      ar_bsd = c.ARCHIVE_FORMAT_AR_BSD,
       mtree = c.ARCHIVE_FORMAT_MTREE,
       raw = c.ARCHIVE_FORMAT_RAW,
       xar = c.ARCHIVE_FORMAT_XAR,
@@ -104,39 +119,57 @@ defmodule Archive.Nif do
       rar_v5 = c.ARCHIVE_FORMAT_RAR_V5,
   };
 
-  pub const ArchiveFormat = enum(c_int) {
-      cpio = @intFromEnum(ArchiveBaseFormat.cpio),
-      cpio_posix = @intFromEnum(ArchiveBaseFormat.cpio) | 1,
-      cpio_bin_le = @intFromEnum(ArchiveBaseFormat.cpio) | 2,
-      cpio_bin_be = @intFromEnum(ArchiveBaseFormat.cpio) | 3,
-      cpio_svr4_nocrc = @intFromEnum(ArchiveBaseFormat.cpio) | 4,
-      cpio_svr4_crc = @intFromEnum(ArchiveBaseFormat.cpio) | 5,
-      cpio_afio_large = @intFromEnum(ArchiveBaseFormat.cpio) | 6,
-      cpio_pwb = @intFromEnum(ArchiveBaseFormat.cpio) | 7,
-      shar = @intFromEnum(ArchiveBaseFormat.shar),
-      shar_base = @intFromEnum(ArchiveBaseFormat.shar) | 1,
-      shar_dump = @intFromEnum(ArchiveBaseFormat.shar) | 2,
-      tar = @intFromEnum(ArchiveBaseFormat.tar),
-      tar_ustar = @intFromEnum(ArchiveBaseFormat.tar) | 1,
-      tar_pax_interchange = @intFromEnum(ArchiveBaseFormat.tar) | 2,
-      tar_pax_restricted = @intFromEnum(ArchiveBaseFormat.tar) | 3,
-      tar_gnutar = @intFromEnum(ArchiveBaseFormat.tar) | 4,
-      iso9660 = @intFromEnum(ArchiveBaseFormat.iso9660),
-      iso9660_rockridge = @intFromEnum(ArchiveBaseFormat.iso9660) | 1,
-      zip = @intFromEnum(ArchiveBaseFormat.zip),
-      empty = @intFromEnum(ArchiveBaseFormat.empty),
-      ar = @intFromEnum(ArchiveBaseFormat.ar),
-      ar_gnu = @intFromEnum(ArchiveBaseFormat.ar) | 1,
-      ar_bsd = @intFromEnum(ArchiveBaseFormat.ar) | 2,
-      mtree = @intFromEnum(ArchiveBaseFormat.mtree),
-      raw = @intFromEnum(ArchiveBaseFormat.raw),
-      xar = @intFromEnum(ArchiveBaseFormat.xar),
-      lha = @intFromEnum(ArchiveBaseFormat.lha),
-      cab = @intFromEnum(ArchiveBaseFormat.cab),
-      rar = @intFromEnum(ArchiveBaseFormat.rar),
-      sevenz = @intFromEnum(ArchiveBaseFormat.sevenz),
-      warc = @intFromEnum(ArchiveBaseFormat.warc),
-      rar_v5 = @intFromEnum(ArchiveBaseFormat.rar_v5),
+  pub fn isSubFormatOf(self: ArchiveFormat, parent: ArchiveFormat) bool {
+      return (@intFromEnum(self) & c.ARCHIVE_FORMAT_BASE_MASK) == @intFromEnum(parent);
+  }
+
+  pub const ExtractFlags = enum(c_int) {
+      owner = c.ARCHIVE_EXTRACT_OWNER,
+      perm = c.ARCHIVE_EXTRACT_PERM,
+      time = c.ARCHIVE_EXTRACT_TIME,
+      no_overwrite = c.ARCHIVE_EXTRACT_NO_OVERWRITE,
+      unlink = c.ARCHIVE_EXTRACT_UNLINK,
+      acl = c.ARCHIVE_EXTRACT_ACL,
+      fflags = c.ARCHIVE_EXTRACT_FFLAGS,
+      xattr = c.ARCHIVE_EXTRACT_XATTR,
+      secure_symlinks = c.ARCHIVE_EXTRACT_SECURE_SYMLINKS,
+      secure_nodotdot = c.ARCHIVE_EXTRACT_SECURE_NODOTDOT,
+      no_autodir = c.ARCHIVE_EXTRACT_NO_AUTODIR,
+      no_overwrite_newer = c.ARCHIVE_EXTRACT_NO_OVERWRITE_NEWER,
+      sparse = c.ARCHIVE_EXTRACT_SPARSE,
+      mac_metadata = c.ARCHIVE_EXTRACT_MAC_METADATA,
+      no_hfs_compression = c.ARCHIVE_EXTRACT_NO_HFS_COMPRESSION,
+      hfs_compression_forced = c.ARCHIVE_EXTRACT_HFS_COMPRESSION_FORCED,
+      secure_noabsolutepaths = c.ARCHIVE_EXTRACT_SECURE_NOABSOLUTEPATHS,
+      clear_nochange_fflags = c.ARCHIVE_EXTRACT_CLEAR_NOCHANGE_FFLAGS,
+      safe_writes = c.ARCHIVE_EXTRACT_SAFE_WRITES,
+  };
+
+  const ExtractFlagDocs = struct {
+      flag: ExtractFlags,
+      default_doc: []const u8,
+  };
+
+  const extractFlagDocumentation = [_]ExtractFlagDocs{
+      .{ .flag = .owner, .default_doc = "Do not try to set owner/group." },
+      .{ .flag = .perm, .default_doc = "Do obey umask, do not restore SUID/SGID/SVTX bits." },
+      .{ .flag = .time, .default_doc = "Do not restore mtime/atime." },
+      .{ .flag = .no_overwrite, .default_doc = "Replace existing files." },
+      .{ .flag = .unlink, .default_doc = "Try create first, unlink only if create fails with EEXIST." },
+      .{ .flag = .acl, .default_doc = "Do not restore ACLs." },
+      .{ .flag = .fflags, .default_doc = "Do not restore fflags." },
+      .{ .flag = .xattr, .default_doc = "Do not restore xattrs." },
+      .{ .flag = .secure_symlinks, .default_doc = "Do not try to guard against extracts redirected by symlinks. Note: With ARCHIVE_EXTRACT_UNLINK, will remove any intermediate symlink." },
+      .{ .flag = .secure_nodotdot, .default_doc = "Do not reject entries with '..' as path elements." },
+      .{ .flag = .no_autodir, .default_doc = "Create parent directories as needed." },
+      .{ .flag = .no_overwrite_newer, .default_doc = "Overwrite files, even if one on disk is newer." },
+      .{ .flag = .sparse, .default_doc = "Detect blocks of 0 and write holes instead." },
+      .{ .flag = .mac_metadata, .default_doc = "Do not restore Mac extended metadata. This has no effect except on Mac OS." },
+      .{ .flag = .no_hfs_compression, .default_doc = "Use HFS+ compression if it was compressed. This has no effect except on Mac OS v10.6 or later." },
+      .{ .flag = .hfs_compression_forced, .default_doc = "Do not use HFS+ compression if it was not compressed. This has no effect except on Mac OS v10.6 or later." },
+      .{ .flag = .secure_noabsolutepaths, .default_doc = "Do not reject entries with absolute paths" },
+      .{ .flag = .clear_nochange_fflags, .default_doc = "Do not clear no-change flags when unlinking object" },
+      .{ .flag = .safe_writes, .default_doc = "Do not extract atomically (using rename)" },
   };
 
   pub const Allow = enum {
@@ -604,6 +637,29 @@ defmodule Archive.Nif do
 
   pub fn archive_compression_name(a: ArchiveReaderResource) [*c]u8 {
       return @constCast(c.archive_compression_name(a.unpack()));
+  }
+
+  pub fn archive_version_string() [*c]u8 {
+      return @constCast(c.archive_version_string());
+  }
+
+  pub fn archive_version_details() [*c]u8 {
+      return @constCast(c.archive_version_details());
+  }
+  pub fn archive_zlib_version() [*c]u8 {
+      return @constCast(c.archive_zlib_version());
+  }
+  pub fn archive_liblzma_version() [*c]u8 {
+      return @constCast(c.archive_liblzma_version());
+  }
+  pub fn archive_bzlib_version() [*c]u8 {
+      return @constCast(c.archive_bzlib_version());
+  }
+  pub fn archive_liblz4_version() [*c]u8 {
+      return @constCast(c.archive_liblz4_version());
+  }
+  pub fn archive_libzstd_version() [*c]u8 {
+      return @constCast(c.archive_libzstd_version());
   }
   """
 

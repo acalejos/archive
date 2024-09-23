@@ -196,7 +196,11 @@ defmodule Archive.Stream do
   def init!(%__MODULE__{} = archive), do: init(archive) |> unwrap!()
 
   defimpl Enumerable do
-    def reduce(%Archive.Stream{reader: %{open: path_or_data, as: open_as}} = archive, acc, fun) do
+    def reduce(
+          %Archive.Stream{reader: %{open: path_or_data, as: open_as} = reader} = archive,
+          acc,
+          fun
+        ) do
       start_fn =
         fn ->
           with {:ok, %Archive.Stream{reader: %{ref: ref}} = archive} <-
@@ -208,13 +212,16 @@ defmodule Archive.Stream do
                  ) do
             archive
           else
-            {:error, error} ->
-              {:error, error}
+            {:error, reason} ->
+              raise Archive.Error,
+                reason: reason,
+                action: "read",
+                path: if(reader.as == :file, do: reader.open, else: "in-memory data")
           end
         end
 
       next_fn = fn
-        %Archive.Stream{entry_ref: entry_ref, reader: %{ref: ref}} = archive ->
+        %Archive.Stream{entry_ref: entry_ref, reader: %{ref: ref} = reader} = archive ->
           with :ok <-
                  call(
                    Nif.archive_read_next_header(ref, entry_ref),
@@ -228,7 +235,10 @@ defmodule Archive.Stream do
               {:halt, archive}
 
             {:error, reason} ->
-              {:halt, {{:error, reason}, archive}}
+              raise Archive.Error,
+                reason: reason,
+                action: "read",
+                path: if(reader.as == :file, do: reader.open, else: "in-memory data")
           end
       end
 
@@ -257,17 +267,23 @@ defmodule Archive.Stream do
   end
 
   defimpl Collectable do
-    def into(%Archive.Stream{entry_ref: entry_ref, writer: %{file: path}} = archive)
+    def into(%Archive.Stream{entry_ref: entry_ref, writer: %{file: path} = writer} = archive)
         when is_reference(entry_ref) do
       with {:ok, %Archive.Stream{writer: %{ref: ref}} = archive} <-
              Archive.Stream.init(%{archive | reader: false}),
            :ok <- call(Nif.archive_write_open_filename(ref, path), ref) do
         {:ok, _into(archive)}
+      else
+        {:error, reason} ->
+          raise Archive.Error,
+            reason: reason,
+            action: "write",
+            path: writer.file
       end
     end
 
     defp _into(
-           %Archive.Stream{writer: %{ref: ref}, entry_ref: entry_ref} =
+           %Archive.Stream{writer: %{ref: ref} = writer, entry_ref: entry_ref} =
              archive
          ) do
       fn
@@ -275,6 +291,12 @@ defmodule Archive.Stream do
           with {:ok, %Archive.Entry{} = entry} <- Archive.Entry.write_header(entry, archive),
                :ok <- call(Nif.archive_entry_clear(entry_ref), ref) do
             {[entry], archive}
+          else
+            {:error, reason} ->
+              raise Archive.Error,
+                reason: reason,
+                action: "write",
+                path: writer.file
           end
 
         _, :done ->
@@ -285,5 +307,65 @@ defmodule Archive.Stream do
           :ok = call(Nif.archive_write_refresh(ref))
       end
     end
+  end
+
+  defimpl Inspect do
+    def inspect(stream, _opts) do
+      reader_info = inspect_reader(stream.reader)
+      writer_info = inspect_writer(stream.writer)
+
+      content =
+        [reader_info, writer_info]
+        |> Enum.reject(&is_nil/1)
+        |> Enum.join(" ")
+
+      "#Archive.Stream<#{content}>"
+    end
+
+    defp inspect_reader(nil), do: nil
+
+    defp inspect_reader(reader) do
+      source = if reader.as == :file, do: inspect(reader.open), else: ":raw"
+      formats = format_list(reader.formats)
+      filters = filter_list(reader.filters, Nif.listReadableFilters())
+      "r#{source}[#{formats}:#{filters}]"
+    end
+
+    defp inspect_writer(nil), do: nil
+
+    defp inspect_writer(writer) do
+      "w#{inspect(writer.file)}[#{format_list(writer.format)}:#{filter_list(writer.filters, Nif.listWritableFilters())}]"
+    end
+
+    defp format_list(list) when is_list(list) do
+      if length(list) > 3 do
+        "#{length(list)}f"
+      else
+        list
+        |> Enum.map(&to_string/1)
+        |> Enum.map(&String.slice(&1, 0..2))
+        |> Enum.join(",")
+      end
+    end
+
+    defp format_list(item), do: format_list([item])
+
+    defp filter_list(filters, options) when is_list(filters) do
+      cond do
+        filters == options ->
+          "all"
+
+        length(filters) > 3 ->
+          "#{length(filters)}f"
+
+        true ->
+          filters
+          |> Enum.map(&to_string/1)
+          |> Enum.map(&String.slice(&1, 0..2))
+          |> Enum.join(",")
+      end
+    end
+
+    defp filter_list(item, options), do: filter_list([item], options)
   end
 end
