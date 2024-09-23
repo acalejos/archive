@@ -135,12 +135,32 @@ defmodule Archive do
   >
   ```
   """
+  import Archive.Nif, only: [unwrap!: 1]
+
   defstruct [
     :format,
     :description,
     entries: [],
     total_size: 0
   ]
+
+  def stream(opts \\ []) do
+    Archive.Stream.new(opts)
+  end
+
+  def stream!(opts \\ []), do: stream(opts) |> unwrap!()
+
+  def writer(path, opts \\ []) do
+    Archive.stream(reader: false, writer: [{:file, path} | opts])
+  end
+
+  def writer!(path, opts \\ []), do: writer(path, opts) |> unwrap!()
+
+  def reader(path_or_data, opts \\ []) do
+    Archive.stream(reader: [{:open, path_or_data} | opts], writer: false)
+  end
+
+  def reader!(path, opts \\ []), do: reader(path, opts) |> unwrap!()
 
   defimpl Inspect, for: [Archive.Reader, Archive.Writer] do
     import Inspect.Algebra

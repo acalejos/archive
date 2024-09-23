@@ -2,7 +2,6 @@ defmodule Archive.Stream do
   use Archive.Nif
 
   defstruct [
-    :path_or_data,
     :writer,
     :reader,
     :entry_ref
@@ -46,7 +45,9 @@ defmodule Archive.Stream do
            ]
          ]},
       default: @read_filters
-    ]
+    ],
+    open: [type: :string, required: true],
+    as: [type: {:in, [:file, :data, :auto]}, default: :auto]
   ]
   @writer_opts [
     format: [
@@ -56,82 +57,91 @@ defmodule Archive.Stream do
     filters: [
       type: {:or, [{:in, [:all | @write_filters]}, {:list, {:in, @write_filters}}]},
       default: :none
-    ]
+    ],
+    file: [type: :string, required: true]
   ]
 
   @archive_stream_opts [
     writer: [
-      type: :keyword_list,
-      keys: @writer_opts,
+      type: {:or, [:boolean, keyword_list: @writer_opts]},
       default: [format: :tar, filters: :none]
     ],
     reader: [
-      type: :keyword_list,
-      keys: @reader_opts,
+      type: {:or, [{:in, [false]}, keyword_list: @reader_opts]},
       default: [formats: @read_formats, filters: @read_filters]
     ]
   ]
 
   @archive_stream_schema NimbleOptions.new!(@archive_stream_opts)
 
-  def new(path_or_data, opts \\ []) do
+  def new(opts \\ []) do
     with {:ok, archive_params} <- NimbleOptions.validate(opts, @archive_stream_schema),
          {:ok, entry_ref} <- call(Nif.archive_entry_new()),
-         {:ok, read_ref} <- call(Nif.archive_read_new()),
-         {:ok, write_ref} <- call(Nif.archive_write_new()) do
+         {:ok, read_ref} <-
+           if(archive_params[:reader], do: call(Nif.archive_read_new()), else: {:ok, nil}),
+         {:ok, write_ref} <-
+           if(archive_params[:writer], do: call(Nif.archive_write_new()), else: {:ok, nil}) do
       writer =
-        archive_params[:writer]
-        |> Enum.into(%{})
-        |> Map.update!(:filters, fn
-          filters when is_list(filters) ->
-            filters
+        if archive_params[:writer] do
+          archive_params[:writer]
+          |> Enum.into(%{})
+          |> Map.update!(:filters, fn
+            filters when is_list(filters) ->
+              filters
 
-          :all ->
-            @write_filters
+            :all ->
+              @write_filters
 
-          filter ->
-            [filter]
-        end)
-        |> Map.update!(:format, fn format -> [format] end)
-        |> Map.put(:ref, write_ref)
+            filter ->
+              [filter]
+          end)
+          |> Map.update!(:format, fn format -> [format] end)
+          |> Map.put(:ref, write_ref)
+        end
 
       reader =
-        archive_params[:reader]
-        |> Enum.into(%{})
-        |> Map.update!(:formats, fn
-          [only: formats] ->
-            formats
+        if archive_params[:reader] do
+          archive_params[:reader]
+          |> Enum.into(%{})
+          |> Map.update!(:formats, fn
+            [only: formats] ->
+              formats
 
-          [except: formats] ->
-            @write_formats |> Enum.filter(&(&1 in formats))
+            [except: formats] ->
+              @write_formats |> Enum.filter(&(&1 in formats))
 
-          formats when is_list(formats) ->
-            formats
+            formats when is_list(formats) ->
+              formats
 
-          format ->
-            [format]
-        end)
-        |> Map.update!(:filters, fn
-          [only: filters] ->
-            filters
+            format ->
+              [format]
+          end)
+          |> Map.update!(:filters, fn
+            [only: filters] ->
+              filters
 
-          [except: filters] ->
-            @write_filters |> Enum.filter(&(&1 in filters))
+            [except: filters] ->
+              @write_filters |> Enum.filter(&(&1 in filters))
 
-          filters when is_list(filters) ->
-            filters
+            filters when is_list(filters) ->
+              filters
 
-          filter ->
-            [filter]
-        end)
-        |> Map.put(:ref, read_ref)
+            filter ->
+              [filter]
+          end)
+          |> then(
+            &Map.update!(&1, :as, fn as ->
+              as || if(File.regular?(&1[:open]), do: :file, else: :data)
+            end)
+          )
+          |> Map.put(:ref, read_ref)
+        end
 
       {:ok,
        struct!(__MODULE__,
          entry_ref: entry_ref,
          writer: writer,
-         reader: reader,
-         path_or_data: path_or_data
+         reader: reader
        )}
     end
   end
@@ -140,16 +150,25 @@ defmodule Archive.Stream do
   Initializes the archive with the formats specified in `new/1`
   """
   def init(%__MODULE__{} = archive) do
-    zipped = [
-      {archive.reader.filters, &Nif.archiveFilterToInt/1,
-       &Nif.archive_read_support_filter_by_code/2, archive.reader.ref},
-      {archive.writer.format, &Nif.archiveFormatToInt/1, &Nif.archive_write_set_format/2,
-       archive.writer.ref},
-      {archive.writer.filters, &Nif.archiveFilterToInt/1, &Nif.archive_write_add_filter/2,
-       archive.writer.ref},
-      {archive.reader.formats, &Nif.archiveFormatToInt/1,
-       &Nif.archive_read_support_format_by_code/2, archive.reader.ref}
-    ]
+    zipped =
+      [
+        archive.reader &&
+          {archive.reader.filters, &Nif.archiveFilterToInt/1,
+           fn a, b ->
+             IO.puts("Adding filter Code #{b}")
+             Nif.archive_read_support_filter_by_code(a, b)
+           end, archive.reader.ref},
+        archive.writer &&
+          {archive.writer.format, &Nif.archiveFormatToInt/1, &Nif.archive_write_set_format/2,
+           archive.writer.ref},
+        archive.writer &&
+          {archive.writer.filters, &Nif.archiveFilterToInt/1, &Nif.archive_write_add_filter/2,
+           archive.writer.ref},
+        archive.reader &&
+          {archive.reader.formats, &Nif.archiveFormatToInt/1,
+           &Nif.archive_read_support_format_by_code/2, archive.reader.ref}
+      ]
+      |> Enum.filter(& &1)
 
     Enum.reduce_while(zipped, {:ok, archive}, &process_option_group/2)
   end
@@ -176,13 +195,13 @@ defmodule Archive.Stream do
   def init!(%__MODULE__{} = archive), do: init(archive) |> unwrap!()
 
   defimpl Enumerable do
-    def reduce(%Archive.Stream{path_or_data: path_or_data} = archive, acc, fun) do
+    def reduce(%Archive.Stream{reader: %{open: path_or_data, as: open_as}} = archive, acc, fun) do
       start_fn =
         fn ->
           with {:ok, %Archive.Stream{reader: %{ref: ref}} = archive} <-
-                 Archive.Stream.init(archive),
+                 Archive.Stream.init(%{archive | writer: false}),
                :ok <-
-                 if(File.regular?(path_or_data),
+                 if(open_as == :file,
                    do: call(Nif.archive_read_open_filename(ref, path_or_data, 10240), ref),
                    else: call(Nif.archive_read_open_memory(ref, path_or_data), ref)
                  ) do
@@ -237,10 +256,10 @@ defmodule Archive.Stream do
   end
 
   defimpl Collectable do
-    def into(%Archive.Stream{entry_ref: entry_ref, path_or_data: path} = archive)
+    def into(%Archive.Stream{entry_ref: entry_ref, writer: %{file: path}} = archive)
         when is_reference(entry_ref) do
       with {:ok, %Archive.Stream{writer: %{ref: ref}} = archive} <-
-             Archive.Stream.init(archive),
+             Archive.Stream.init(%{archive | reader: false}),
            :ok <- call(Nif.archive_write_open_filename(ref, path), ref) do
         {:ok, _into(archive)}
       end
@@ -255,9 +274,6 @@ defmodule Archive.Stream do
           with {:ok, %Archive.Entry{} = entry} <- Archive.Entry.write_header(entry, archive),
                :ok <- call(Nif.archive_entry_clear(entry_ref), ref) do
             {[entry], archive}
-          else
-            err ->
-              IO.inspect(err)
           end
 
         _, :done ->
