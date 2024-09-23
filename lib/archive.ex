@@ -120,7 +120,7 @@ defmodule Archive do
   ### Examples
 
   ```elixir
-  IO.inspect(%Archive.Reader{} = a, custom_options: [depth: 3, breadth: 2])
+  IO.inspect(%Archive{} = a, custom_options: [depth: 3, breadth: 2])
   ```
 
   ```
@@ -137,7 +137,7 @@ defmodule Archive do
   """
   alias Archive.Entry
   alias Archive.Nif
-  import Archive.Nif, only: [unwrap!: 1, call: 1, call: 2, safe_call: 2, safe_call: 1]
+  import Archive.Nif, only: [unwrap!: 1, call: 1, safe_call: 1]
 
   defstruct [
     :format,
@@ -148,8 +148,14 @@ defmodule Archive do
     total_size: 0
   ]
 
-  def new(filename_or_path) do
+  def new(_filename_or_path) do
     struct!(__MODULE__)
+  end
+
+  def index(%__MODULE__{} = archive, %Archive.Stream{} = stream) do
+    archive
+    |> update_entries(stream)
+    |> update_info(stream)
   end
 
   def update_info(%__MODULE__{} = archive, %Archive.Stream{} = stream) do
@@ -173,12 +179,16 @@ defmodule Archive do
         end
 
       compression =
-        case call(Nif.archive_compression(stream.reader.ref)) do
-          {:ok, code} when is_integer(code) ->
-            Nif.archiveFilterToAtom(code)
+        if compression do
+          compression
+        else
+          case call(Nif.archive_compression(stream.reader.ref)) do
+            {:ok, code} when is_integer(code) ->
+              Nif.archiveFilterToAtom(code)
 
-          _ ->
-            nil
+            _ ->
+              nil
+          end
         end
 
       description =
@@ -210,6 +220,22 @@ defmodule Archive do
     end)
   end
 
+  def update_entries(%__MODULE__{} = archive, %Archive.Stream{} = stream) do
+    archive =
+      Enum.reduce(stream, %{archive | entries: []}, fn %Entry{stat: %File.Stat{size: size}} =
+                                                         entry,
+                                                       %Archive{
+                                                         total_size: total_size,
+                                                         entries: entries
+                                                       } ->
+        entries = [entry | entries]
+        total_size = total_size + size
+        %{archive | entries: entries, total_size: total_size}
+      end)
+
+    Map.update!(archive, :entries, &Enum.reverse/1)
+  end
+
   def stream(opts \\ []) do
     Archive.Stream.new(opts)
   end
@@ -228,7 +254,7 @@ defmodule Archive do
 
   def reader!(path, opts \\ []), do: reader(path, opts) |> unwrap!()
 
-  defimpl Inspect, for: [Archive.Reader, Archive.Writer] do
+  defimpl Inspect do
     import Inspect.Algebra
 
     @default_depth 3
