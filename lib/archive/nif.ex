@@ -597,6 +597,14 @@ defmodule Archive.Nif do
       const new_archive = c.archive_write_new() orelse return error.ArchiveCreationFailed;
       a.update(new_archive);
   }
+
+  pub fn archive_compression(a: ArchiveReaderResource) i32 {
+      return c.archive_compression(a.unpack());
+  }
+
+  pub fn archive_compression_name(a: ArchiveReaderResource) [*c]u8 {
+      return @constCast(c.archive_compression_name(a.unpack()));
+  }
   """
 
   @errors [:ArchiveEof, :ArchiveFailed, :ArchiveWarn, :ArchiveFatal]

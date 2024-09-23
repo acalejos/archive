@@ -130,8 +130,12 @@ defmodule Archive.Stream do
               [filter]
           end)
           |> then(
-            &Map.update!(&1, :as, fn as ->
-              as || if(File.regular?(&1[:open]), do: :file, else: :data)
+            &Map.update!(&1, :as, fn
+              :auto ->
+                if(File.regular?(&1[:open]), do: :file, else: :data)
+
+              other ->
+                other
             end)
           )
           |> Map.put(:ref, read_ref)
