@@ -13,15 +13,15 @@
 Like `libarchive`, `Archive` treats all files as streams first and foremost, but provides many convenient high-level APIs to make it more natural to work with archive.
 
 > [!WARNING]
-> `Archive` is still **very** early in its development, and currently only supports reading archives with all formats, compressions, and filters enabled. In the future, these will be configurable parameters. Writing is currently
-> **NOT** supported.
+> `Archive` is still **very** early in its development, and not all operations supported by `libarchive` are supported yet.
+> There is no guarantee that any particular `libarchive` C API function will be bound in Elixir.
 
 ## Installation
 
 ```elixir
 def deps do
   [
-    {:archive, "~> 0.1"}
+    {:archive, "~> 0.3"}
   ]
 end
 ```
