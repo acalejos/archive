@@ -1,5 +1,6 @@
 defmodule Archive.Stream do
   use Archive.Nif
+  use Archive.Schemas, only: [:stream_schema]
 
   defstruct [
     :writer,
@@ -7,75 +8,8 @@ defmodule Archive.Stream do
     :entry_ref
   ]
 
-  @reader_opts [
-    formats: [
-      type:
-        {:or,
-         [
-           {:in, @read_formats},
-           {:list, {:in, @read_formats}},
-           keyword_list: [
-             only: [
-               type: {:list, {:in, @read_formats}}
-             ]
-           ],
-           keyword_list: [
-             except: [
-               type: {:list, {:in, @read_formats}}
-             ]
-           ]
-         ]},
-      default: @read_formats
-    ],
-    filters: [
-      type:
-        {:or,
-         [
-           {:in, @read_filters},
-           {:list, {:in, @read_filters}},
-           keyword_list: [
-             only: [
-               type: {:list, {:in, @read_filters}}
-             ]
-           ],
-           keyword_list: [
-             except: [
-               type: {:list, {:in, @read_filters}}
-             ]
-           ]
-         ]},
-      default: @read_filters
-    ],
-    open: [type: :string, required: true],
-    as: [type: {:in, [:file, :data, :auto]}, default: :auto]
-  ]
-  @writer_opts [
-    format: [
-      type: {:in, @write_formats},
-      default: :tar
-    ],
-    filters: [
-      type: {:or, [{:in, [:all | @write_filters]}, {:list, {:in, @write_filters}}]},
-      default: :none
-    ],
-    file: [type: :string, required: true]
-  ]
-
-  @archive_stream_opts [
-    writer: [
-      type: {:or, [:boolean, keyword_list: @writer_opts]},
-      default: [format: :tar, filters: :none]
-    ],
-    reader: [
-      type: {:or, [{:in, [false]}, keyword_list: @reader_opts]},
-      default: [formats: @read_formats, filters: @read_filters]
-    ]
-  ]
-
-  @archive_stream_schema NimbleOptions.new!(@archive_stream_opts)
-
   def new(opts \\ []) do
-    with {:ok, archive_params} <- NimbleOptions.validate(opts, @archive_stream_schema),
+    with {:ok, archive_params} <- NimbleOptions.validate(opts, @stream_schema),
          {:ok, entry_ref} <- call(Nif.archive_entry_new()),
          {:ok, read_ref} <-
            if(archive_params[:reader], do: call(Nif.archive_read_new()), else: {:ok, nil}),
@@ -104,11 +38,14 @@ defmodule Archive.Stream do
           archive_params[:reader]
           |> Enum.into(%{})
           |> Map.update!(:formats, fn
+            :all ->
+              @read_formats
+
             [only: formats] ->
               formats
 
             [except: formats] ->
-              @write_formats |> Enum.filter(&(&1 in formats))
+              @read_formats |> Enum.filter(&(&1 in formats))
 
             formats when is_list(formats) ->
               formats
@@ -117,11 +54,14 @@ defmodule Archive.Stream do
               [format]
           end)
           |> Map.update!(:filters, fn
+            :all ->
+              @read_filters
+
             [only: filters] ->
               filters
 
             [except: filters] ->
-              @write_filters |> Enum.filter(&(&1 in filters))
+              @read_filters |> Enum.filter(&(&1 in filters))
 
             filters when is_list(filters) ->
               filters

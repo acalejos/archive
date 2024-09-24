@@ -1,4 +1,6 @@
 defmodule Archive.Utils do
+  use Archive.Schemas, only: [:extract_schema]
+  import Bitwise, only: [bor: 2]
   @doc false
   def format_size(size) when is_integer(size) do
     cond do
@@ -40,4 +42,50 @@ defmodule Archive.Utils do
   defp is_directory?(%Archive.Entry{stat: %File.Stat{type: :directory}}), do: true
 
   defp is_directory?(_), do: false
+
+  @doc false
+  def handle_extract_opts(opts \\ []) do
+    with {:ok, opts} <- NimbleOptions.validate(opts, @extract_schema) do
+      flags =
+        case opts[:flags] do
+          flag when is_integer(flag) ->
+            flag
+
+          [] ->
+            0
+
+          [flag] ->
+            Archive.Nif.extractFlagToInt(flag)
+
+          [flag | rest] ->
+            Enum.reduce(rest, flag, fn next, acc -> bor(acc, next) end)
+        end
+
+      destination = opts[:to]
+
+      valid_dir =
+        if destination do
+          cond do
+            File.dir?(destination) ->
+              :ok
+
+            File.regular?(destination) ->
+              {:error, "Regular file found at #{inspect(destination)}"}
+
+            true ->
+              File.mkdir_p(destination)
+          end
+        else
+          :ok
+        end
+
+      case valid_dir do
+        :ok ->
+          {:ok, Keyword.put(opts, :flags, flags)}
+
+        error ->
+          error
+      end
+    end
+  end
 end
