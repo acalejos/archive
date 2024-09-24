@@ -43,6 +43,57 @@ defmodule Archive.Nif do
   Most functions in this module may raise `ErlangError` on failure. You should invoke **most** of
   these functions using `Archive.Nif.safe_call/2` to catch the errors and return them as `:ok` or
   an `{:error, reason}` tuple
+
+  ## `libarchive` APIs
+
+  `libarchive` distinguishes the following APIs:
+
+  <!-- tabs-open -->
+  ### `archive_read`
+  > #### Reading an Archive {: .info}
+  >
+  > Although `Archive`'s high-level API takes care of all of the resource management for you, it can still be useful to understand how it works:
+  >   1) Create new archive reader object
+  >   2) Update any global reader properties as appropriate. These properties determine supported compressions, formats, etc.
+  >   3) Open the archive
+  >   4) Repeatedly call archive_read_next_header to get information about
+  >       successive archive entries.  Call archive_read_data to extract
+  >      data for entries of interest.
+  >   5) Cleanup archive reader object
+
+  ### `archive-write`
+  > #### Creating an Archive {: .info}
+  > To create an archive:
+  >   1) Ask archive_write_new for an archive writer object.
+  >   2) Set any global properties.  In particular, you should set
+  >      the compression and format to use.
+  >   3) Call archive_write_open to open the file (most people
+  >       will use archive_write_open_file or archive_write_open_fd,
+  >       which provide convenient canned I/O callbacks for you).
+  >   4) For each entry:
+  >      - construct an appropriate struct archive_entry structure
+  >      - archive_write_header to write the header
+  >      - archive_write_data to write the entry data
+  >   5) archive_write_close to close the output
+  >   6) archive_write_free to cleanup the writer and release resources
+
+  ### `archive_write_disk`
+  > #### Writing to Disk {: .info}
+  To create objects on disk:
+  >   1) Ask archive_write_disk_new for a new archive_write_disk object.
+  >   2) Set any global properties.  In particular, you probably
+  >      want to set the options.
+  >   3) For each entry:
+  >      - construct an appropriate struct archive_entry structure
+  >      - archive_write_header to create the file/dir/etc on disk
+  >      - archive_write_data to write the entry data
+  >   4) archive_write_free to cleanup the writer and release resources
+  >s
+  > In particular, you can use this in conjunction with archive_read()
+  > to pull entries out of an archive and create them on disk.
+  <!-- tabs-close -->
+
+  It also has `archive_read_extract` functions that combine reading with writing to disk.
   """
   require Logger
   use Archive.Setup
@@ -123,7 +174,7 @@ defmodule Archive.Nif do
       return (@intFromEnum(self) & c.ARCHIVE_FORMAT_BASE_MASK) == @intFromEnum(parent);
   }
 
-  pub const ExtractFlags = enum(c_int) {
+  pub const ExtractFlag = enum(c_int) {
       owner = c.ARCHIVE_EXTRACT_OWNER,
       perm = c.ARCHIVE_EXTRACT_PERM,
       time = c.ARCHIVE_EXTRACT_TIME,
@@ -146,7 +197,7 @@ defmodule Archive.Nif do
   };
 
   const ExtractFlagDocs = struct {
-      flag: ExtractFlags,
+      flag: ExtractFlag,
       default_doc: []const u8,
   };
 
@@ -578,16 +629,15 @@ defmodule Archive.Nif do
       try checkArchiveResult(c.archive_read_support_compression_all(a.unpack()));
   }
 
-  pub fn archive_read_data(a: ArchiveReaderResource, size: usize) ![]const u8 {
+  pub fn archive_read_data(a: ArchiveReaderResource, size: usize) !beam.term {
       const data = try beam.allocator.alloc(u8, size);
       defer beam.allocator.free(data);
 
       const num_read: isize = c.archive_read_data(a.unpack(), data.ptr, size);
-
       if (size != num_read) {
           return CAllocError.archive;
       } else {
-          return data;
+          return beam.make(data, .{});
       }
   }
 
@@ -660,6 +710,17 @@ defmodule Archive.Nif do
   }
   pub fn archive_libzstd_version() [*c]u8 {
       return @constCast(c.archive_libzstd_version());
+  }
+  pub fn archive_read_extract(a: ArchiveReaderResource, e: ArchiveEntryResource, flags: i32) !void {
+      try checkArchiveResult(c.archive_read_extract(a.unpack(), e.unpack(), flags));
+  }
+
+  pub fn getExtractInfo() [extractFlagDocumentation.len]ExtractFlagDocs {
+      return extractFlagDocumentation;
+  }
+
+  pub fn extractFlagToInt(f: ExtractFlag) i32 {
+      return @intFromEnum(f);
   }
   """
 
@@ -830,6 +891,7 @@ defmodule Archive.Nif do
     read_filters = list_all(:filters, :read)
     write_formats = list_all(:formats, :write)
     write_filters = list_all(:filters, :write)
+    extract_info = getExtractInfo()
 
     quote do
       alias Archive.Nif
@@ -838,6 +900,7 @@ defmodule Archive.Nif do
       @read_filters unquote(read_filters)
       @write_formats unquote(write_formats)
       @write_filters unquote(write_filters)
+      @extract_info unquote(Macro.escape(extract_info))
     end
   end
 end

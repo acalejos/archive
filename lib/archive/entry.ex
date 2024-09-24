@@ -28,6 +28,22 @@ defmodule Archive.Entry do
 
   def new!(fields \\ []), do: new(fields) |> unwrap!()
 
+  def extract(%__MODULE__{path: path}, %Archive.Stream{} = stream, opts \\ []) do
+    {:ok, opts} = Archive.Utils.handle_extract_opts(opts)
+
+    if opts[:prefix] do
+      call(Nif.archive_entry_set_pathname(stream.entry_ref, opts[:prefix] <> path))
+    end
+
+    if opts[:destination] do
+      File.cd!(opts[:destination], fn ->
+        call(Nif.archive_read_extract(stream.reader.ref, stream.entry_ref, opts[:flags]))
+      end)
+    else
+      call(Nif.archive_read_extract(stream.reader.ref, stream.entry_ref, opts[:flags]))
+    end
+  end
+
   @doc """
   Loads the entry data into the archive. The archive is automatically passed to the current entry during `Archive.read/3`, `Archive.from_memory_streaming/3`, and `Archive.from_file_streaming/3`.
   """

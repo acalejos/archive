@@ -4,115 +4,79 @@ defmodule Archive do
 
   `Archive` provides a high-level API for interacting with archive files.
 
+  ### Intro to `Archive`'s APIs
+  <!-- tabs-open -->
+
+  ### High-Level API
+
+  The `Archive` API is the highest-level API offered by `Archive`, and mostly consists of convenience functions for common
+  use cases with archives. It involves using the `Archive` struct as a container for archive information extracted from
+  archives using the `Archive.Stream` API.
+
+  It also implements the `Inspect` protocol specially for providing information about the archive in a succinct manner.
+
+  ### Streaming API
+
+  `Archive` implements archive traversal, reading, and writing as
+  streams. It does this in the `Archive.Stream` module.
+
+  `Archive.Stream` implements both the `Enumerable` and `Collectable` protocol, modeled after `File.Stream` from the
+  standard library. This allows you to read from an archive, perform transformations, and redirect to a new archive,
+  all lazily.
+
+  All implementations in the high-level API are built off of the streaming API.
+
+  ### Low-Level API
+
+  > ####  Caution {: .error}
+  >
+  > The low-level API is a nearly one-to-one mapping to the `libarchive` C API. All of the low-level API
+  > lives in the `Archive.Nif` module, and it is highly recommended to not use this API directly.
+  >
+  > If you choose to use this API, you will need to carefully consider resource management and proper error checking.
+
+  <!-- tabs-close -->
+
+  Realistically, you will likely mix the High-Level API and the Streaming API, since the Streaming API is required to
+  traverse the archive.
+
+  ## Concepts
+
   Like `libarchive`, `Archive` treats all files as streams first and foremost, but provides many convenient high-level APIs to make it more natural to work with archive.
 
-  > #### Early Development {: .warning}
-  >
-  > `Archive` is still very early in its development, and currently only supports reading archives with all formats, compressions, and filters enabled. In the future, these will be configurable parameters.
+  There are four major operations that `Archive` performs:
+  * [Reading Archives](#module-reading-archives)
+  * [Writing Archives](#module-writing-archives)
+  * [Writing to Disk](#module-writing-to-disk)
+  * [Extracting to Disk](#module-extracting-to-disk)
 
-
-  ## Reading
+  ### Reading Archives
 
   As streams, archives are not conducive to random-access reads or seeks. Once archives are opened and read, they must be closed and reopened to read again. It is often a two-stage process to read an archive, where you read a list of the contents first, then selectively filter which items you want suring a second pass.
 
   `Archive` takes care of all resource allocations, initializations, and cleanup for you. Using the high-level API, you only need to provide a mapping function to determine what to do with each entry as it is streamed.
 
-  > #### The High-Level API {: .info}
-  >
-  > `Archive`'s high-level API consists of the following:
-  >    1) `read/3` - The main entry-point for reading archive contents as an `Enumerable`, since it automatically collects the entries. `read/3` can work for both file-based reads and memory-based reads.
-  >    2) `from_file_streaming/3` - Streams the contents of the archive from a file, applying the supplied function.
-  >    3) `from_memory_streaming/3` - Streams the contents of the archive from memory, applying the supplied function.
-
-  > #### The Low-Level Reading Loop {: .info}
-  >
-  > Although `Archive`'s high-level API takes care of all of the resource management for you, it can still be useful to understand how it works:
-  >   1) Create new archive reader object
-  >   2) Update any global reader properties as appropriate. These properties determine supported compressions, formats, etc.
-  >   3) Open the archive
-  >   4) Repeatedly call archive_read_next_header to get information about
-  >       successive archive entries.  Call archive_read_data to extract
-  >      data for entries of interest.
-  >   5) Cleanup archive reader object
-
   The mapping function will accept an `Archive.Entry` struct, which will contain metadata (such as path and size) information about the entry. You can use that information to determine what to do in your function.
 
   You can also use function from the `Archive.Entry` module to perform different operations with the entry (most commonly `Archive.Entry.load/2`).
 
-  > #### Usage of `Archive.Entry` functions {: .error}
-  >
-  > It is generally discouraged to use function from the `Archive.Entry` module outside of the context of a function passed to the high-level API.
-  >
-  > As mentioned earlier, since archives are all streaming objects, each entry can only be operated on while it is the current entry in the stream. If you try to use functions from the `Archive.Entry` module while outside of the loop you provide to the various high-level APIs, it is up to you to also supply the `Archive` struct. The high-level API takes care of ensuring that the `Archive` gets passed in.
+  ### Writing Archives
 
-  ### Examples
+  TODO
 
-  Setup the archive
+  ### Writing to Disk
 
-  ```elixir
-  data = File.read!("/path/to/data.zip")
-  {:ok, a} = Archive.new()
-  ```
+  TODO
 
-  Read the index of entries. Notice that the output of inspection
-  will show you how many items are in the archive (given the function you supplied to `Archive.read/3`), the archive format, the size of the archive, and more.
+  ### Extracting to Disk
 
-  ```elixir
-  {:ok, a} = Archive.read(a, data)
-  ```
-
-  ```
-  {:ok, #Archive[zip]<
-   147 entries (0 loaded), 506.0 KB
-   ───────────────
-     .editorconfig (166 B)
-     .github/ (1 items, 338 B)
-       workflows/ (1 items, 338 B)
-         deploy-theme.yml (338 B)
-     ... and 21 more
-  >}
-  ```
-
-  Here's an example of reading into memory all entries that are larger than 1500 bytes, and store the entries as a list (rather than as a hierarchical map):
-
-  ```elixir
-  {:ok, a} =
-  Archive.read(a, data,
-    with: fn entry, archive ->
-      if entry.size > 1500 do
-        {:ok, entry} = Archive.Entry.load(entry, archive)
-        entry
-      else
-        entry
-      end
-      end, as: :list
-  )
-  ```
-
-  ```
-  {:ok, #Archive[zip]<
-   147 entries (40 loaded), 506.0 KB
-   ───────────────
-     .editorconfig (166 B)
-     .github/ (1 items, 338 B)
-       workflows/ (1 items, 338 B)
-         deploy-theme.yml (338 B)
-     ... and 21 more
-  >}
-  ```
-
-  ## Writing
-
-  > #### TODO {: .error}
-  >
-  > `Archive` is still very early in development and does not implement any of the writing API yet.
-
+  TODO
 
   ## `Inspect`
 
-  `Archive.Reader`, `Archive.Writer`, and `Archive.Entry` provide custom implementations for the `Inspect` protocol.
+  `Archive, `Archive.Stream`, and `Archive.Entry` provide custom implementations for the `Inspect` protocol.
 
-  When inspecting `Archive.{Reader, Writer}`, the following custom options can be supplied to the `custom_options` option of inspect:
+  When inspecting `Archive`, the following custom options can be supplied to the `custom_options` option of inspect:
 
   * `:depth` - Depth of directories to display. Defaults to 3.
   * `:breadth` - Breadth of items to display. Defaults to 2.
@@ -124,7 +88,7 @@ defmodule Archive do
   ```
 
   ```
-  #Reader[zip]<
+  #Archive[zip]<
   147 entries (40 loaded), 506.0 KB
   ───────────────
     .editorconfig (166 B)
@@ -136,8 +100,8 @@ defmodule Archive do
   ```
   """
   alias Archive.Entry
-  alias Archive.Nif
-  import Archive.Nif, only: [unwrap!: 1, call: 1, safe_call: 1]
+  use Archive.Nif
+  use Archive.Schemas, only: [:extract_schema, :stream_schema, :reader_schema, :writer_schema]
 
   defstruct [
     :format,
@@ -148,8 +112,38 @@ defmodule Archive do
     total_size: 0
   ]
 
-  def new(_filename_or_path) do
+  @doc """
+  Create a new `Archive` struct
+  """
+  def new() do
     struct!(__MODULE__)
+  end
+
+  @doc """
+  Extracts the archive from the reader stream, extracting the archive
+  to disk.
+
+  As opposed to the other `write` operations, which write a new archive,
+  `extract` extracts the archive to disk at the target location.
+
+  ## Options
+  #{NimbleOptions.docs(@extract_schema)}
+  """
+  def extract(%Archive.Stream{} = stream, opts \\ []) do
+    {:ok, opts} = Archive.Utils.handle_extract_opts(opts)
+    {destination, opts} = Keyword.pop(opts, :to)
+
+    if destination do
+      File.cd!(destination, fn -> extract_archive(stream, opts) end)
+    else
+      extract_archive(stream, opts)
+    end
+  end
+
+  defp extract_archive(%Archive.Stream{} = stream, opts) do
+    Enum.each(stream, fn entry ->
+      Entry.extract(entry, stream, opts)
+    end)
   end
 
   def index(%__MODULE__{} = archive, %Archive.Stream{} = stream) do
@@ -236,18 +230,41 @@ defmodule Archive do
     Map.update!(archive, :entries, &Enum.reverse/1)
   end
 
+  @doc """
+  Creates a new `Archive.Stream` that is capable of reading and writing an archive.
+
+  ## Options
+  #{NimbleOptions.docs(@stream_schema)}
+  """
   def stream(opts \\ []) do
     Archive.Stream.new(opts)
   end
 
   def stream!(opts \\ []), do: stream(opts) |> unwrap!()
 
+  @doc """
+  Creates a new `Archive.Stream` that is capable of writing an archive.
+
+  Opens the writer at the given filepath.
+
+  ## Options
+  See [Writer Options](#stream/1-writer-options) for a list of the full options.
+  """
   def writer(path, opts \\ []) do
     Archive.stream(reader: false, writer: [{:file, path} | opts])
   end
 
   def writer!(path, opts \\ []), do: writer(path, opts) |> unwrap!()
 
+  @doc """
+  Creates a new `Archive.Stream` that is capable of reading an archive.
+
+  Attempts to infer whether the passed binary is a filename or in-memory
+  data to be read.
+
+  ## Options
+  See [Reader Options](#stream/1-reader-options) for a list of the full options.
+  """
   def reader(path_or_data, opts \\ []) do
     Archive.stream(reader: [{:open, path_or_data} | opts], writer: false)
   end

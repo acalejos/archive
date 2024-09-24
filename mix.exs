@@ -5,7 +5,7 @@ defmodule Archive.MixProject do
     [
       app: :archive,
       name: "Archive",
-      version: "0.2.0",
+      version: "0.3.0",
       elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
       description: "Universal archive library",
