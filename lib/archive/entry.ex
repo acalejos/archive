@@ -68,7 +68,10 @@ defmodule Archive.Entry do
       ) do
     with :ok <- call(Nif.archive_entry_set_pathname(entry_ref, path), ref),
          :ok <-
-           call(Nif.archive_entry_copy_stat(entry_ref, Nif.file_stat_to_zig_map(stat)), ref),
+           call(
+             Nif.archive_entry_copy_stat(entry_ref, Archive.Stat.file_stat_to_zig_map(stat)),
+             ref
+           ),
          :ok <- call(Nif.archive_write_header(ref, entry_ref), ref) do
       {:ok, entry}
     end
@@ -79,7 +82,7 @@ defmodule Archive.Entry do
       when is_reference(ref) do
     with {:ok, pathname} <- call(Nif.archive_entry_pathname(entry_ref)),
          {:ok, zig_stat} <- call(Nif.archive_entry_stat(entry_ref)),
-         %File.Stat{} = stat <- Nif.to_file_stat(zig_stat) do
+         %File.Stat{} = stat <- Archive.Stat.to_file_stat(zig_stat) do
       {:ok, struct!(entry, path: pathname, stat: stat)}
     end
   end

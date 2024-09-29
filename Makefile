@@ -39,8 +39,10 @@ ifeq ($(LIBARCHIVE_INSTALLED),no)
 		--prefix=$(MIX_APP_PATH)/priv/$(MIX_TARGET) \
 		--disable-bsdtar \
 		--disable-bsdcpio \
-		CPPFLAGS="-I/opt/homebrew/include" \
-		LDFLAGS="-L/opt/homebrew/lib" && \
+		--disable-bsdcat \
+		--disable-bsdunzip \
+		CPPFLAGS="-I/opt/homebrew/include -I/usr/local/include -I/usr/include" \
+		LDFLAGS="-L/opt/homebrew/lib -L/usr/local/lib -L/usr/lib" && \
 	make && \
 	make -j install
 	@echo "Build and installation completed."
@@ -48,9 +50,9 @@ else
 	@echo "libarchive is already installed. Skipping build."
 endif
 
-#Clean up
+# Clean up
 clean:
 	rm -rf $(BUILD_DIR)/libarchive-*
-	rm -rf $(MIX_APP_PATH)/priv/$(MIX_TARGET)/lib $(MIX_APP_PATH)/priv/include
+	rm -rf $(MIX_APP_PATH)/priv/$(MIX_TARGET)/lib $(MIX_APP_PATH)/priv/$(MIX_TARGET)/include
 
 .PHONY: all libarchive clean
