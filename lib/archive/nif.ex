@@ -97,18 +97,18 @@ defmodule Archive.Nif do
   """
   require Logger
   use Archive.Setup
-  import Bitwise
 
   ~Z"""
+  const std = @import("std");
   const c = @cImport({
+      if (@import("builtin").abi == .musl){
+        @cDefine("__DEFINED_struct_timespec","");
+      }
       @cInclude("archive.h");
       @cInclude("archive_entry.h");
-      @cInclude("sys/stat.h");
-      @cInclude("time.h");
   });
   const ArchiveError = error{ ArchiveFailed, ArchiveRetry, ArchiveWarn, ArchiveFatal, ArchiveEof };
   const CAllocError = error{ archiveEntry, archive };
-  const std = @import("std");
   const beam = @import("beam");
   const enif = @import("erl_nif");
   const root = @import("root");
@@ -379,16 +379,29 @@ defmodule Archive.Nif do
       }
   };
 
-  const FileKind = enum(c_uint) {
-      block_device = c.S_IFBLK,
-      character_device = c.S_IFCHR,
-      directory = c.S_IFDIR,
-      named_pipe = c.S_IFIFO,
-      sym_link = c.S_IFLNK,
-      file = c.S_IFREG,
-      unix_domain_socket = c.S_IFSOCK,
-      unknown = 0,
-  };
+  pub fn fileKinds() struct {
+        mask: c_uint,
+        block_device: c_uint,
+        character_device: c_uint,
+        directory: c_uint,
+        named_pipe: c_uint,
+        sym_link: c_uint,
+        file: c_uint,
+        unix_domain_socket: c_uint,
+        unknown: c_uint,
+    } {
+        return .{
+            .mask = c.S_IFMT,
+            .block_device = c.S_IFBLK,
+            .character_device = c.S_IFCHR,
+            .directory = c.S_IFDIR,
+            .named_pipe = c.S_IFIFO,
+            .sym_link = c.S_IFLNK,
+            .file = c.S_IFREG,
+            .unix_domain_socket = c.S_IFSOCK,
+            .unknown = 0,
+        };
+    }
 
   const FileMode = enum(c_uint) {
       irwxu = c.S_IRWXU,
@@ -408,72 +421,49 @@ defmodule Archive.Nif do
       isvtx = c.S_ISVTX,
   };
 
-  pub const CustomStat = struct {
-      inode: i64,
-      size: i64,
-      mode: u16,
-      kind: FileKind,
-      atime_sec: i64,
-      atime_nsec: i64,
-      mtime_sec: i64,
-      mtime_nsec: i64,
-      ctime_sec: i64,
-      ctime_nsec: i64,
-      nlinks: c_uint,
-      devmajor: c_int,
-      devminor: c_int,
-      gid: i64,
-      uid: i64,
-  };
-
-  pub fn archive_entry_copy_stat(e: ArchiveEntryResource, stat: CustomStat) void {
-      std.debug.print("My struct: {any}\n", .{stat});
-      c.archive_entry_set_ino(e.unpack(), stat.inode);
+  pub fn archive_entry_copy_stat(e: ArchiveEntryResource, stat: std.c.Stat) !void {
+      const c_ino: c.la_int64_t = @intCast(stat.ino);
+      c.archive_entry_set_ino(e.unpack(), c_ino);
       c.archive_entry_set_size(e.unpack(), stat.size);
       c.archive_entry_set_mode(e.unpack(), stat.mode);
-
-      if (stat.kind != .unknown) {
-          c.archive_entry_set_filetype(e.unpack(), @intFromEnum(stat.kind));
+      const atime = stat.atime();
+      const mtime = stat.mtime();
+      const ctime = stat.ctime();
+      if (@hasField(@TypeOf(atime), "tv_sec") and @hasField(@TypeOf(atime), "tv_nsec")){
+        c.archive_entry_set_atime(e.unpack(), atime.tv_sec, atime.tv_nsec);
+        c.archive_entry_set_mtime(e.unpack(), mtime.tv_sec, mtime.tv_nsec);
+        c.archive_entry_set_ctime(e.unpack(), ctime.tv_sec, ctime.tv_nsec);
+      } else if (@hasField(@TypeOf(atime), "sec") and @hasField(@TypeOf(atime), "nsec")){
+        c.archive_entry_set_atime(e.unpack(), atime.sec, atime.nsec);
+        c.archive_entry_set_mtime(e.unpack(), mtime.sec, mtime.nsec);
+        c.archive_entry_set_ctime(e.unpack(), ctime.sec, ctime.nsec);
       }
 
-      c.archive_entry_set_atime(e.unpack(), stat.atime_sec, stat.atime_nsec);
-      c.archive_entry_set_mtime(e.unpack(), stat.mtime_sec, stat.mtime_nsec);
-      c.archive_entry_set_ctime(e.unpack(), stat.ctime_sec, stat.ctime_nsec);
 
-      c.archive_entry_set_nlink(e.unpack(), stat.nlinks);
-      c.archive_entry_set_devmajor(e.unpack(), stat.devmajor);
-      c.archive_entry_set_devminor(e.unpack(), stat.devminor);
+      c.archive_entry_set_nlink(e.unpack(), stat.nlink);
+      c.archive_entry_set_dev(e.unpack(), stat.dev);
+      c.archive_entry_set_rdev(e.unpack(), stat.rdev);
       c.archive_entry_set_gid(e.unpack(), stat.gid);
       c.archive_entry_set_uid(e.unpack(), stat.uid);
   }
 
-  fn getFileKind(mode: c_uint) FileKind {
-      return std.meta.intToEnum(FileKind, mode & c.S_IFMT) catch .unknown;
-  }
-  pub fn archive_entry_stat(e: ArchiveEntryResource) !CustomStat {
+  pub fn archive_entry_stat(e: ArchiveEntryResource) !std.c.Stat {
       const c_stat = c.archive_entry_stat(e.unpack());
       if (c_stat == null) {
           return error.StatError;
       }
-      const stat = c_stat.*;
+      var stat: std.c.Stat = @bitCast(c_stat.*);
+      const nlinks: @TypeOf(stat.nlink) = @truncate(c.archive_entry_nlink(e.unpack()));
+      const newino: @TypeOf(stat.ino) = @intCast(c.archive_entry_ino(e.unpack()));
+      const newgid: @TypeOf(stat.gid) = @intCast(c.archive_entry_gid(e.unpack()));
+      const newuid: @TypeOf(stat.uid) = @intCast(c.archive_entry_uid(e.unpack()));
+      stat.ino = newino;
+      stat.nlink = nlinks;
+      stat.dev = c.archive_entry_dev(e.unpack());
+      stat.gid = newgid;
+      stat.uid = newuid;
 
-      return CustomStat{
-          .inode = @as(i64, @bitCast(stat.st_ino)),
-          .size = @as(i64, @bitCast(stat.st_size)),
-          .mode = stat.st_mode,
-          .kind = getFileKind(stat.st_mode),
-          .atime_sec = stat.st_atimespec.tv_sec,
-          .atime_nsec = stat.st_atimespec.tv_nsec,
-          .mtime_sec = stat.st_mtimespec.tv_sec,
-          .mtime_nsec = stat.st_mtimespec.tv_nsec,
-          .ctime_sec = stat.st_ctimespec.tv_sec,
-          .ctime_nsec = stat.st_ctimespec.tv_nsec,
-          .nlinks = c.archive_entry_nlink(e.unpack()),
-          .devmajor = c.archive_entry_devmajor(e.unpack()),
-          .devminor = c.archive_entry_devminor(e.unpack()),
-          .gid = c.archive_entry_gid(e.unpack()),
-          .uid = c.archive_entry_uid(e.unpack()),
-      };
+      return stat;
   }
 
   pub fn archiveFilterToInt(filter: ArchiveFilter) c_int {
@@ -796,95 +786,12 @@ defmodule Archive.Nif do
   def list_all(:formats, :write), do: listWritableFormats() |> Enum.map(&String.to_atom/1)
   def list_all(:filters, :write), do: listWritableFilters() |> Enum.map(&String.to_atom/1)
 
-  def file_stat_to_zig_map(%File.Stat{} = stat) do
-    %{
-      inode: convert_integer(stat.inode),
-      size: convert_integer(stat.size),
-      mode: convert_integer(stat.mode),
-      kind: convert_type(stat.type),
-      atime_sec: extract_seconds(stat.atime),
-      atime_nsec: extract_nanoseconds(stat.atime),
-      mtime_sec: extract_seconds(stat.mtime),
-      mtime_nsec: extract_nanoseconds(stat.mtime),
-      ctime_sec: extract_seconds(stat.ctime),
-      ctime_nsec: extract_nanoseconds(stat.ctime),
-      nlinks: convert_integer(stat.links),
-      devmajor: convert_integer(stat.major_device),
-      devminor: convert_integer(stat.minor_device),
-      gid: convert_integer(stat.gid),
-      uid: convert_integer(stat.uid)
-    }
-  end
-
-  defp convert_type(:device), do: :block_device
-  defp convert_type(:directory), do: :directory
-  defp convert_type(:regular), do: :file
-  defp convert_type(:symlink), do: :sym_link
-  defp convert_type(_), do: :unknown
-
-  defp convert_integer(:undefined), do: 0
-  defp convert_integer(value) when is_integer(value), do: value
-  defp convert_integer(_), do: 0
-
-  defp extract_seconds(:undefined), do: 0
-
-  defp extract_seconds({{year, month, day}, {hour, minute, second}}) do
-    :calendar.datetime_to_gregorian_seconds({{year, month, day}, {hour, minute, second}}) -
-      62_167_219_200
-  end
-
-  defp extract_seconds(unix_timestamp) when is_integer(unix_timestamp), do: unix_timestamp
-  defp extract_seconds(_), do: 0
-
-  defp extract_nanoseconds(:undefined), do: 0
-  # Calendar format doesn't include nanoseconds
-  defp extract_nanoseconds({{_, _, _}, {_, _, _}}), do: 0
-  # For integer timestamps, we don't have nanosecond precision
-  defp extract_nanoseconds(_), do: 0
-
-  @doc false
-  def to_file_stat(zig_stat) do
-    %File.Stat{
-      access: get_access(zig_stat.mode),
-      atime: convert_time(zig_stat.atime_sec, zig_stat.atime_nsec),
-      ctime: convert_time(zig_stat.ctime_sec, zig_stat.ctime_nsec),
-      gid: zig_stat.gid,
-      inode: zig_stat.inode,
-      links: zig_stat.nlinks,
-      major_device: zig_stat.devmajor,
-      minor_device: zig_stat.devminor,
-      mode: zig_stat.mode,
-      mtime: convert_time(zig_stat.mtime_sec, zig_stat.mtime_nsec),
-      size: zig_stat.size,
-      type: convert_kind(zig_stat.kind),
-      uid: zig_stat.uid
-    }
-  end
-
-  defp get_access(mode) do
-    cond do
-      (mode &&& 0o600) == 0o600 -> :read_write
-      (mode &&& 0o400) == 0o400 -> :read
-      (mode &&& 0o200) == 0o200 -> :write
-      true -> :none
+  defmacro get_file_kinds() do
+    file_types = fileKinds()
+    quote do
+      unquote(Macro.escape(file_types))
     end
   end
-
-  defp convert_time(sec, nsec) do
-    DateTime.from_unix!(sec, :second)
-    |> DateTime.add(nsec, :nanosecond)
-    |> DateTime.to_naive()
-    |> NaiveDateTime.to_erl()
-  end
-
-  defp convert_kind(:block_device), do: :device
-  defp convert_kind(:character_device), do: :device
-  defp convert_kind(:directory), do: :directory
-  defp convert_kind(:named_pipe), do: :other
-  defp convert_kind(:sym_link), do: :symlink
-  defp convert_kind(:file), do: :regular
-  defp convert_kind(:unix_domain_socket), do: :other
-  defp convert_kind(:unknown), do: :other
 
   defmacro __using__(_opts) do
     read_formats = list_all(:formats, :read)
