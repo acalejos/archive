@@ -251,8 +251,8 @@ defmodule Archive.Stream do
 
   defimpl Inspect do
     def inspect(stream, _opts) do
-      reader_info = inspect_reader(stream.reader)
-      writer_info = inspect_writer(stream.writer)
+      reader_info = (stream.reader && inspect_reader(stream.reader)) || nil
+      writer_info = (stream.writer && inspect_writer(stream.writer)) || nil
 
       content =
         [reader_info, writer_info]
