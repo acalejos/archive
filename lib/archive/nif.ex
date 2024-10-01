@@ -101,8 +101,8 @@ defmodule Archive.Nif do
   ~Z"""
   const std = @import("std");
   const c = @cImport({
-      if (@import("builtin").abi == .musl){
-        @cDefine("__DEFINED_struct_timespec","");
+      if (@import("builtin").abi == .musl) {
+          @cDefine("__DEFINED_struct_timespec", "");
       }
       @cInclude("archive.h");
       @cInclude("archive_entry.h");
@@ -380,28 +380,28 @@ defmodule Archive.Nif do
   };
 
   pub fn fileKinds() struct {
-        mask: c_uint,
-        block_device: c_uint,
-        character_device: c_uint,
-        directory: c_uint,
-        named_pipe: c_uint,
-        sym_link: c_uint,
-        file: c_uint,
-        unix_domain_socket: c_uint,
-        unknown: c_uint,
-    } {
-        return .{
-            .mask = c.S_IFMT,
-            .block_device = c.S_IFBLK,
-            .character_device = c.S_IFCHR,
-            .directory = c.S_IFDIR,
-            .named_pipe = c.S_IFIFO,
-            .sym_link = c.S_IFLNK,
-            .file = c.S_IFREG,
-            .unix_domain_socket = c.S_IFSOCK,
-            .unknown = 0,
-        };
-    }
+      mask: c_uint,
+      block_device: c_uint,
+      character_device: c_uint,
+      directory: c_uint,
+      named_pipe: c_uint,
+      sym_link: c_uint,
+      file: c_uint,
+      unix_domain_socket: c_uint,
+      unknown: c_uint,
+  } {
+      return .{
+          .mask = c.S_IFMT,
+          .block_device = c.S_IFBLK,
+          .character_device = c.S_IFCHR,
+          .directory = c.S_IFDIR,
+          .named_pipe = c.S_IFIFO,
+          .sym_link = c.S_IFLNK,
+          .file = c.S_IFREG,
+          .unix_domain_socket = c.S_IFSOCK,
+          .unknown = 0,
+      };
+  }
 
   const FileMode = enum(c_uint) {
       irwxu = c.S_IRWXU,
@@ -429,18 +429,18 @@ defmodule Archive.Nif do
       const atime = stat.atime();
       const mtime = stat.mtime();
       const ctime = stat.ctime();
-      if (@hasField(@TypeOf(atime), "tv_sec") and @hasField(@TypeOf(atime), "tv_nsec")){
-        c.archive_entry_set_atime(e.unpack(), atime.tv_sec, atime.tv_nsec);
-        c.archive_entry_set_mtime(e.unpack(), mtime.tv_sec, mtime.tv_nsec);
-        c.archive_entry_set_ctime(e.unpack(), ctime.tv_sec, ctime.tv_nsec);
-      } else if (@hasField(@TypeOf(atime), "sec") and @hasField(@TypeOf(atime), "nsec")){
-        c.archive_entry_set_atime(e.unpack(), atime.sec, atime.nsec);
-        c.archive_entry_set_mtime(e.unpack(), mtime.sec, mtime.nsec);
-        c.archive_entry_set_ctime(e.unpack(), ctime.sec, ctime.nsec);
+      if (@hasField(@TypeOf(atime), "tv_sec") and @hasField(@TypeOf(atime), "tv_nsec")) {
+          c.archive_entry_set_atime(e.unpack(), atime.tv_sec, atime.tv_nsec);
+          c.archive_entry_set_mtime(e.unpack(), mtime.tv_sec, mtime.tv_nsec);
+          c.archive_entry_set_ctime(e.unpack(), ctime.tv_sec, ctime.tv_nsec);
+      } else if (@hasField(@TypeOf(atime), "sec") and @hasField(@TypeOf(atime), "nsec")) {
+          c.archive_entry_set_atime(e.unpack(), atime.sec, atime.nsec);
+          c.archive_entry_set_mtime(e.unpack(), mtime.sec, mtime.nsec);
+          c.archive_entry_set_ctime(e.unpack(), ctime.sec, ctime.nsec);
       }
 
-
-      c.archive_entry_set_nlink(e.unpack(), stat.nlink);
+      const c_nlink: u32 = @intCast(stat.ino);
+      c.archive_entry_set_nlink(e.unpack(), c_nlink);
       c.archive_entry_set_dev(e.unpack(), stat.dev);
       c.archive_entry_set_rdev(e.unpack(), stat.rdev);
       c.archive_entry_set_gid(e.unpack(), stat.gid);
@@ -453,7 +453,7 @@ defmodule Archive.Nif do
           return error.StatError;
       }
       var stat: std.c.Stat = @bitCast(c_stat.*);
-      const nlinks: @TypeOf(stat.nlink) = @truncate(c.archive_entry_nlink(e.unpack()));
+      const nlinks: @TypeOf(stat.nlink) = @intCast(c.archive_entry_nlink(e.unpack()));
       const newino: @TypeOf(stat.ino) = @intCast(c.archive_entry_ino(e.unpack()));
       const newgid: @TypeOf(stat.gid) = @intCast(c.archive_entry_gid(e.unpack()));
       const newuid: @TypeOf(stat.uid) = @intCast(c.archive_entry_uid(e.unpack()));
@@ -788,6 +788,7 @@ defmodule Archive.Nif do
 
   defmacro get_file_kinds() do
     file_types = fileKinds()
+
     quote do
       unquote(Macro.escape(file_types))
     end
