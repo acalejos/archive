@@ -129,7 +129,7 @@ defmodule Archive.Stat do
     }
   end
 
-  defp convert_time(%{atime: atime, mtime: mtime, ctime: ctime}) do
+  defp convert_time(%{atim: atime, mtim: mtime, ctim: ctime}) do
     %{
       atime: convert_time(atime),
       mtime: convert_time(mtime),

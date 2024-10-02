@@ -8,7 +8,8 @@ defmodule Archive.Setup do
 
   @base_path "#{:code.priv_dir(:archive)}/#{Mix.target()}"
   @include_path "#{@base_path}/include/"
-  @link_path "#{@base_path}/lib/libarchive#{@ext}"
+  @library_dir "#{@base_path}/lib/"
+  @link_path "#{@library_dir}libarchive#{@ext}"
 
   defmacro __using__(_opts) do
     quote do
@@ -16,9 +17,11 @@ defmodule Archive.Setup do
         otp_app: :archive,
         c: [
           include_dirs: [unquote(@include_path)],
-          link_lib: unquote(@link_path)
+          link_lib: unquote(@link_path),
+          library_dirs: [unquote(@library_dir)]
         ],
-        resources: [:ArchiveReaderResource, :ArchiveWriterResource, :ArchiveEntryResource]
+        resources: [:ArchiveReaderResource, :ArchiveWriterResource, :ArchiveEntryResource],
+        dump_build_zig: true
     end
   end
 end
