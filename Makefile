@@ -9,9 +9,22 @@ BUILD_DIR := $(MIX_BUILD_PATH)
 LIBARCHIVE_URL := https://github.com/libarchive/libarchive/releases/download/v$(LIBARCHIVE_VERSION)/libarchive-$(LIBARCHIVE_VERSION).tar.gz
 LIBARCHIVE_TARBALL := $(DOWNLOAD_DIR)/libarchive-$(LIBARCHIVE_VERSION).tar.gz
 LIBARCHIVE_SRC_DIR := $(BUILD_DIR)/libarchive-$(LIBARCHIVE_VERSION)
+UNAME_S := $(shell uname -s)
+
+ifeq ($(UNAME_S),Linux)
+    SHLIB_EXT := so
+else ifeq ($(UNAME_S),Darwin)
+    SHLIB_EXT := dylib
+else ifeq ($(UNAME_S),FreeBSD)
+    SHLIB_EXT := so
+else ifeq ($(findstring MINGW,$(UNAME_S)),MINGW)
+    SHLIB_EXT := dll
+else
+    $(error Unsupported operating system: $(UNAME_S))
+endif
 
 # Check if libarchive is already installed
-LIBARCHIVE_INSTALLED := $(shell [ -f "$(MIX_APP_PATH)/priv/$(MIX_TARGET)/lib/libarchive.a" ] && echo "yes" || echo "no")
+LIBARCHIVE_INSTALLED := $(shell [ -f "$(MIX_APP_PATH)/priv/$(MIX_TARGET)/lib/libarchive.$(SHLIB_EXT)" ] && echo "yes" || echo "no")
 
 # Default target
 all: libarchive
@@ -41,6 +54,7 @@ ifeq ($(LIBARCHIVE_INSTALLED),no)
 		--disable-bsdcpio \
 		--disable-bsdcat \
 		--disable-bsdunzip \
+		--enable-static=no \
 		CPPFLAGS="-I/opt/homebrew/include -I/usr/local/include -I/usr/include" \
 		LDFLAGS="-L/opt/homebrew/lib -L/usr/local/lib -L/usr/lib" && \
 	make && \

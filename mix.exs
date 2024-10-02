@@ -29,7 +29,8 @@ defmodule Archive.MixProject do
   defp deps do
     [
       {:nimble_options, "~> 1.1"},
-      {:zigler, "~>0.13", runtime: false},
+      # {:zigler, "~>0.13", runtime: false},
+      {:zigler, github: "acalejos/zigler"},
       {:elixir_make, "~> 0.8", runtime: false},
       {:ex_doc, "~> 0.34", only: :docs}
     ]
