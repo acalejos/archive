@@ -74,7 +74,7 @@ defmodule Archive do
 
   ## `Inspect`
 
-  `Archive, `Archive.Stream`, and `Archive.Entry` provide custom implementations for the `Inspect` protocol.
+  `Archive`, `Archive.Stream`, and `Archive.Entry` provide custom implementations for the `Inspect` protocol.
 
   When inspecting `Archive`, the following custom options can be supplied to the `custom_options` option of inspect:
 
