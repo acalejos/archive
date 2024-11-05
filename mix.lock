@@ -12,5 +12,5 @@
   "protoss": {:hex, :protoss, "0.2.1", "fcf437ed65178d6cbf9a600886e3da9f7173697223972f062ee593941c2588b1", [:mix], [], "hexpm", "2261dbdc4d5913ce1e88d1410108d97f21140a118f45f6acc3edc4ecdb952052"},
   "zig_get": {:hex, :zig_get, "0.13.1", "0c5ba23e8ed9bfabb22ddee3f728fe382b72db057423956549e71c9a33aed090", [:mix], [{:jason, "~> 1.4", [hex: :jason, repo: "hexpm", optional: false]}], "hexpm", "bb05db6ed83a72e3100ab0110aad0f3c81ea005f9e85f22c63c3527a82257b4f"},
   "zig_parser": {:hex, :zig_parser, "0.4.0", "5230576fcea30c061f08f6053448ad3dc5194a45485065564a7f8047bb351ce9", [:mix], [{:pegasus, "~> 0.2.4", [hex: :pegasus, repo: "hexpm", optional: false]}], "hexpm", "ec54cf14e80a1485e29a80b42756d0421426db81eb9e2630721fd46ab5c21bcb"},
-  "zigler": {:git, "https://github.com/acalejos/zigler.git", "6837801bffff67c93ed7eddb90e71edc5e2557cc", []},
+  "zigler": {:hex, :zigler, "0.13.3", "18f9a1b4d230154156b9955b209fbd85c4195d5b35e0d55dae5d3a48c646e8c8", [:mix], [{:jason, "~> 1.4", [hex: :jason, repo: "hexpm", optional: false]}, {:protoss, "~> 0.2", [hex: :protoss, repo: "hexpm", optional: false]}, {:zig_get, "0.13.1", [hex: :zig_get, repo: "hexpm", optional: false]}, {:zig_parser, "~> 0.4.0", [hex: :zig_parser, repo: "hexpm", optional: false]}], "hexpm", "b83bfd7c8bfad275cc59a4816846b2c863f1dcf9842303323bf3110ac2597134"},
 }

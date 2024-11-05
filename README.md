@@ -21,7 +21,7 @@ Like `libarchive`, `Archive` treats all files as streams first and foremost, but
 ```elixir
 def deps do
   [
-    {:archive, "~> 0.3"}
+    {:archive, "~> 0.4"}
   ]
 end
 ```
