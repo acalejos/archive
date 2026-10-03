@@ -1,91 +1,320 @@
 defmodule Archive.Entry do
   @moduledoc """
-  `Archive.Entry` represents a single item in an archive.
+  Metadata and an optional body for an archive member.
 
-  Most functions in this module will only work within the context of the aupplied mapping function given to `Archive.read/3`. This is because these functions require a reference to the archive while streaming and while the entry is the current item in the stream.
+  Enumerated entries retain their native metadata, including links, ACLs,
+  extended attributes, and sparse descriptors. Unread bodies can be forwarded
+  directly into a writer or consumed in bounded chunks with `data_stream/2`.
+  Consume them before advancing the archive; use `read_data/2` to retain a body.
+  Create independent entries with `from_binary/3` or `from_file/2`.
   """
   use Archive.Nif
-  alias Archive.Stream
-
-  defstruct [
-    :stat,
-    :path,
-    :data
-  ]
+  alias Archive.Stream, as: ArchiveStream
+  defstruct [:stat, :path, :data, :symlink, :hardlink, :source, :native]
 
   @type t :: %__MODULE__{
           stat: File.Stat.t(),
           path: String.t(),
-          data: binary() | nil
+          data: binary() | Enumerable.t() | nil,
+          source: map() | nil,
+          native: reference() | nil,
+          symlink: String.t() | nil,
+          hardlink: String.t() | nil
         }
 
-  @doc """
-  Creates a new `Archive.Entry` struct. This is done implicitly during `Archive.read/3`.
-  """
-  def new(fields \\ []) do
-    {:ok, struct!(__MODULE__, fields)}
-  end
-
+  @doc "Creates an entry from fields."
+  def new(fields \\ []), do: {:ok, struct!(__MODULE__, fields)}
   def new!(fields \\ []), do: new(fields) |> unwrap!()
 
-  def extract(%__MODULE__{path: path}, %Archive.Stream{} = stream, opts \\ []) do
-    {:ok, opts} = Archive.Utils.handle_extract_opts(opts)
+  @doc "Creates a regular-file entry with an in-memory body. Options: `:mode` and `:mtime`."
+  def from_binary(path, data, opts \\ []) when is_binary(path) and is_binary(data) do
+    time = Keyword.get(opts, :mtime, 0)
 
-    if opts[:prefix] do
-      call(Nif.archive_entry_set_pathname(stream.entry_ref, opts[:prefix] <> path))
-    end
-
-    if opts[:destination] do
-      File.cd!(opts[:destination], fn ->
-        call(Nif.archive_read_extract(stream.reader.ref, stream.entry_ref, opts[:flags]))
-      end)
-    else
-      call(Nif.archive_read_extract(stream.reader.ref, stream.entry_ref, opts[:flags]))
-    end
+    new!(
+      path: path,
+      data: data,
+      stat: %File.Stat{
+        size: byte_size(data),
+        type: :regular,
+        mode: Bitwise.bor(0o100000, Keyword.get(opts, :mode, 0o644)),
+        atime: time,
+        mtime: time,
+        ctime: time,
+        inode: 0,
+        links: 1,
+        uid: 0,
+        gid: 0,
+        major_device: 0,
+        minor_device: 0
+      }
+    )
   end
 
-  @doc """
-  Loads the entry data into the archive. The archive is automatically passed to the current entry during `Archive.read/3`, `Archive.from_memory_streaming/3`, and `Archive.from_file_streaming/3`.
-  """
-  def read_data(%__MODULE__{data: data} = e, _) when is_binary(data), do: {:ok, e}
+  @doc "Creates a disk entry with a lazily streamed body, preserving symlinks. Options: `:path` and `:chunk_size`."
+  def from_file(file, opts \\ []) do
+    stat = File.lstat!(file, time: :posix)
 
-  def read_data(%__MODULE__{stat: %File.Stat{size: size}} = entry, %Stream{reader: %{ref: ref}}) do
-    with {:ok, data} <-
-           Nif.safe_call(
-             fn -> Nif.archive_read_data(ref, size) end,
-             ref
-           ) do
+    data =
+      if stat.type == :regular,
+        do: File.stream!(file, Keyword.get(opts, :chunk_size, 65536)),
+        else: nil
+
+    symlink = if stat.type == :symlink, do: File.read_link!(file)
+
+    new!(
+      path: Keyword.get(opts, :path, Path.basename(file)),
+      stat: stat,
+      data: data,
+      symlink: symlink
+    )
+  end
+
+  @doc "Reads and retains the current entry body. The stream argument is retained for compatibility."
+  def read_data(entry, stream \\ nil)
+  def read_data(%__MODULE__{data: data} = entry, _) when is_binary(data), do: {:ok, entry}
+
+  def read_data(%__MODULE__{} = entry, _) do
+    try do
+      data = entry |> data_stream() |> Enum.to_list() |> IO.iodata_to_binary()
       {:ok, %{entry | data: data}}
+    rescue
+      e in [Archive.Error, ErlangError] -> {:error, e}
     end
   end
 
-  def read_data!(%__MODULE__{} = entry, %Stream{} = archive),
-    do: read_data(entry, archive) |> unwrap!()
+  def read_data!(entry, stream \\ nil), do: read_data(entry, stream) |> unwrap!()
 
-  def write_header(
-        %__MODULE__{path: path, stat: %File.Stat{} = stat} = entry,
-        %Stream{entry_ref: entry_ref, writer: %{ref: ref}}
-      ) do
-    with :ok <- call(Nif.archive_entry_set_pathname(entry_ref, path), ref),
-         :ok <-
-           call(
-             Nif.archive_entry_copy_stat(entry_ref, Archive.Stat.file_stat_to_zig_map(stat)),
-             ref
-           ),
-         :ok <- call(Nif.archive_write_header(ref, entry_ref), ref) do
+  @doc "Lazily reads the current body in chunks. Memory use is bounded by `chunk_size` (default 64 KiB)."
+  def data_stream(entry, chunk_size \\ 65536)
+
+  def data_stream(entry, size) when is_integer(size) and size > 0 do
+    case entry do
+      %{data: data} when is_binary(data) ->
+        Stream.unfold(data, fn
+          <<>> ->
+            nil
+
+          bytes ->
+            n = min(size, byte_size(bytes))
+            <<chunk::binary-size(n), rest::binary>> = bytes
+            {chunk, rest}
+        end)
+
+      %{data: data} when not is_nil(data) ->
+        data
+
+      %{source: source} when not is_nil(source) ->
+        Stream.unfold(source, fn source ->
+          case ArchiveStream.checked(
+                 fn ->
+                   Nif.archive_read_data_current(source.reader, source.generation, size)
+                 end,
+                 source.reader
+               ) do
+            <<>> -> nil
+            data -> {data, source}
+          end
+        end)
+
+      %{stat: %{size: 0}} ->
+        []
+
+      %{native: native, path: path} when not is_nil(native) ->
+        raise Archive.Error, reason: :BodyNotLoaded, action: "read entry", path: path
+
+      _ ->
+        raise ArgumentError, "entry has no body source; use from_binary/3 or from_file/2"
+    end
+  end
+
+  def data_stream(_, _), do: raise(ArgumentError, "chunk_size must be a positive integer")
+
+  defp assert_current!(source) do
+    if Nif.archive_read_generation(source.reader) != source.generation do
+      raise Archive.Error, reason: :EntryExpired, action: "read entry", path: source.path
+    end
+  end
+
+  @doc "Extracts the current entry to disk. Uses the same options as `Archive.extract/2`."
+  def extract(%__MODULE__{} = entry, _stream, opts \\ []) do
+    with {:ok, opts} <- Archive.Utils.handle_extract_opts(opts),
+         do: extract_prepared(entry, opts)
+  end
+
+  @doc false
+  def extract_prepared(%__MODULE__{source: source, path: path}, opts) do
+    assert_current!(source)
+    cloned = Nif.archive_entry_clone(source.entry)
+
+    try do
+      target = extract_path!(path, opts)
+
+      flags =
+        if opts[:to],
+          do:
+            Bitwise.band(
+              opts[:flags],
+              Bitwise.bnot(Nif.extractFlagToInt(:secure_noabsolutepaths))
+            ),
+          else: opts[:flags]
+
+      Nif.archive_entry_set_pathname(cloned, target)
+
+      if hardlink = Nif.archive_entry_hardlink(cloned) do
+        Nif.archive_entry_set_hardlink(cloned, extract_path!(hardlink, opts))
+      end
+
+      action = fn ->
+        try do
+          Nif.archive_read_extract_current(source.reader, source.generation, cloned, flags)
+        rescue
+          e in ErlangError -> {:error, Nif.get_error_string(source.reader) || e.original}
+        end
+      end
+
+      action.()
+    after
+      Nif.archive_entry_free(cloned)
+    end
+  end
+
+  defp extract_path!(path, opts) do
+    target = (opts[:prefix] || "") <> path
+
+    if Bitwise.band(opts[:flags], Nif.extractFlagToInt(:secure_noabsolutepaths)) != 0 &&
+         Path.type(target) == :absolute,
+       do: raise(Archive.Error, reason: "absolute entry path", path: target, action: "extract")
+
+    if Bitwise.band(opts[:flags], Nif.extractFlagToInt(:secure_nodotdot)) != 0 &&
+         ".." in Path.split(target),
+       do:
+         raise(Archive.Error,
+           reason: "parent traversal in entry path",
+           path: target,
+           action: "extract"
+         )
+
+    if opts[:to], do: Path.expand(target, opts[:to]), else: target
+  end
+
+  @doc "Writes entry metadata to an initialized writer."
+  def write_header(%__MODULE__{} = entry, %ArchiveStream{writer: %{ref: ref}, entry_ref: empty}) do
+    metadata = entry.native || (entry.source && entry.source.entry)
+    native = if metadata, do: Nif.archive_entry_clone(metadata), else: empty
+
+    try do
+      Nif.archive_entry_set_pathname(native, entry.path)
+      original = if metadata, do: Nif.archive_entry_stat(native)
+      previous = if original, do: Archive.Stat.to_file_stat(original)
+      converted = Archive.Stat.file_stat_to_native_map(entry.stat)
+
+      fields = [:ino, :size, :mode, :nlink, :uid, :gid, :dev, :rdev, :atim, :mtim, :ctim]
+
+      stat = if original, do: Map.merge(original, Map.take(converted, fields)), else: converted
+
+      # File.Stat's calendar timestamps omit nanoseconds. Keep the original
+      # native precision for each timestamp the caller has not changed.
+      stat =
+        Enum.reduce(
+          [{:atime, :atim}, {:mtime, :mtim}, {:ctime, :ctim}],
+          stat,
+          fn {field, key}, acc ->
+            if previous && Map.fetch!(previous, field) == Map.fetch!(entry.stat, field) do
+              Map.put(acc, key, Map.fetch!(original, key))
+            else
+              acc
+            end
+          end
+        )
+
+      stat =
+        if previous && previous.major_device == entry.stat.major_device &&
+             previous.minor_device == entry.stat.minor_device,
+           do: Map.merge(stat, Map.take(original, [:dev, :rdev])),
+           else: stat
+
+      Nif.archive_entry_copy_stat(native, stat)
+
+      if metadata do
+        # Copying a C stat marks timestamps as present. Preserve absence when
+        # unchanged, and birthtime which File.Stat does not expose.
+        for {field, kind} <- [{:atime, :atime}, {:mtime, :mtime}, {:ctime, :ctime}],
+            Map.fetch!(previous, field) == Map.fetch!(entry.stat, field),
+            apply(Nif, String.to_existing_atom("archive_entry_#{kind}_is_set"), [metadata]) == 0 do
+          apply(Nif, String.to_existing_atom("archive_entry_unset_#{kind}"), [native])
+        end
+
+        if Nif.archive_entry_birthtime_is_set(metadata) == 0,
+          do: Nif.archive_entry_unset_birthtime(native)
+      end
+
+      Nif.archive_entry_set_symlink(native, entry.symlink)
+      Nif.archive_entry_set_hardlink(native, entry.hardlink)
+      ArchiveStream.checked(fn -> Nif.archive_write_header(ref, native) end, ref)
       {:ok, entry}
+    after
+      if metadata, do: Nif.archive_entry_free(native), else: Nif.archive_entry_clear(empty)
     end
   end
 
-  def read_header(%__MODULE__{} = entry, %Stream{entry_ref: entry_ref, reader: %{ref: ref}})
-      when is_reference(entry_ref)
-      when is_reference(ref) do
-    with {:ok, pathname} <- call(Nif.archive_entry_pathname(entry_ref)),
-         {:ok, zig_stat} <- call(Nif.archive_entry_stat(entry_ref)),
-         %File.Stat{} = stat <- Archive.Stat.to_file_stat(zig_stat) do
-      {:ok, struct!(entry, path: pathname, stat: stat)}
+  @doc false
+  def write!(entry, active) do
+    write_header(entry, active) |> unwrap!()
+
+    if entry.stat.type == :regular && is_nil(entry.hardlink) do
+      written =
+        Enum.reduce(data_stream(entry), 0, fn chunk, total ->
+          data = IO.iodata_to_binary(chunk)
+
+          count =
+            ArchiveStream.checked(
+              fn -> Nif.archive_write_data(active.writer.ref, data) end,
+              active.writer.ref
+            )
+
+          if count != byte_size(data),
+            do: raise(Archive.Error, reason: :ShortWrite, path: entry.path, action: "write")
+
+          total + count
+        end)
+
+      if written != entry.stat.size,
+        do: raise(Archive.Error, reason: :SizeMismatch, path: entry.path, action: "write")
     end
+
+    ArchiveStream.checked(
+      fn -> Nif.archive_write_finish_entry(active.writer.ref) end,
+      active.writer.ref
+    )
+
+    :ok
   end
+
+  @doc "Reads the current header into an entry, preserving native metadata."
+  def read_header(entry, %ArchiveStream{entry_ref: native, reader: %{ref: ref}}) do
+    clone = Nif.archive_entry_clone(native)
+
+    source = %{
+      reader: ref,
+      entry: clone,
+      generation: Nif.archive_entry_read_generation(clone),
+      path: Nif.archive_entry_pathname(clone)
+    }
+
+    {:ok,
+     %{
+       entry
+       | path: source.path,
+         stat: Nif.archive_entry_stat(clone) |> Archive.Stat.to_file_stat(),
+         symlink: Nif.archive_entry_symlink(clone),
+         hardlink: Nif.archive_entry_hardlink(clone),
+         source: source,
+         native: clone
+     }}
+  end
+
+  @doc false
+  def detach(%__MODULE__{} = entry), do: %{entry | source: nil}
 
   defimpl Inspect do
     import Bitwise

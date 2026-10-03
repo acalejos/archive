@@ -54,11 +54,8 @@ defmodule Archive.Utils do
           [] ->
             0
 
-          [flag] ->
-            Archive.Nif.extractFlagToInt(flag)
-
-          [flag | rest] ->
-            Enum.reduce(rest, flag, fn next, acc -> bor(acc, next) end)
+          flags when is_list(flags) ->
+            Enum.reduce(flags, 0, fn flag, acc -> bor(acc, Archive.Nif.extractFlagToInt(flag)) end)
         end
 
       destination = opts[:to]
@@ -81,6 +78,11 @@ defmodule Archive.Utils do
 
       case valid_dir do
         :ok ->
+          opts =
+            if destination,
+              do: Keyword.put(opts, :to, Archive.Nif.canonical_path(destination)),
+              else: opts
+
           {:ok, Keyword.put(opts, :flags, flags)}
 
         error ->

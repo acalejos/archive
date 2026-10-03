@@ -1,311 +1,294 @@
 defmodule Archive.Stream do
+  @moduledoc """
+  A reusable, lazy archive descriptor implementing `Enumerable` and `Collectable`.
+
+  Enumeration opens a fresh reader and closes it on completion, halt, or error.
+  Entries contain metadata; their bodies are consumed only when requested or
+  when passed directly to a writer. Collection writes headers and bodies and
+  finalizes the archive on `:done`. Each operation owns its own native handles.
+
+      source = Archive.reader!("input.tar.gz")
+      source
+      |> Stream.reject(&String.ends_with?(&1.path, ".tmp"))
+      |> Enum.into(Archive.writer!("output.zip", format: :zip))
+
+  Read entry bodies inside the enumeration callback. `Archive.Entry.data_stream/2`
+  provides bounded chunks, and the collector copies unread bodies automatically.
+  Unloaded entries cannot be read after advancing to another entry or closing
+  the enumeration. The same descriptor can be enumerated again or concurrently.
+  """
   use Archive.Nif
   use Archive.Schemas, only: [:stream_schema]
+  defstruct [:writer, :reader, :entry_ref]
+  @type t :: %__MODULE__{reader: map() | nil, writer: map() | nil, entry_ref: reference() | nil}
 
-  defstruct [
-    :writer,
-    :reader,
-    :entry_ref
-  ]
-
+  @doc "Creates a validated descriptor. No files are opened until consumption."
   def new(opts \\ []) do
-    with {:ok, archive_params} <- NimbleOptions.validate(opts, @stream_schema),
-         {:ok, entry_ref} <- call(Nif.archive_entry_new()),
-         {:ok, read_ref} <-
-           if(archive_params[:reader], do: call(Nif.archive_read_new()), else: {:ok, nil}),
-         {:ok, write_ref} <-
-           if(archive_params[:writer], do: call(Nif.archive_write_new()), else: {:ok, nil}) do
-      writer =
-        if archive_params[:writer] do
-          archive_params[:writer]
-          |> Enum.into(%{})
-          |> Map.update!(:filters, fn
-            filters when is_list(filters) ->
-              filters
-
-            :all ->
-              @write_filters
-
-            filter ->
-              [filter]
-          end)
-          |> Map.update!(:format, fn format -> [format] end)
-          |> Map.put(:ref, write_ref)
-        end
-
-      reader =
-        if archive_params[:reader] do
-          archive_params[:reader]
-          |> Enum.into(%{})
-          |> Map.update!(:formats, fn
-            :all ->
-              @read_formats
-
-            [only: formats] ->
-              formats
-
-            [except: formats] ->
-              @read_formats |> Enum.filter(&(&1 in formats))
-
-            formats when is_list(formats) ->
-              formats
-
-            format ->
-              [format]
-          end)
-          |> Map.update!(:filters, fn
-            :all ->
-              @read_filters
-
-            [only: filters] ->
-              filters
-
-            [except: filters] ->
-              @read_filters |> Enum.filter(&(&1 in filters))
-
-            filters when is_list(filters) ->
-              filters
-
-            filter ->
-              [filter]
-          end)
-          |> then(
-            &Map.update!(&1, :as, fn
-              :auto ->
-                if(File.regular?(&1[:open]), do: :file, else: :data)
-
-              other ->
-                other
-            end)
-          )
-          |> Map.put(:ref, read_ref)
-        end
-
+    with {:ok, params} <- NimbleOptions.validate(opts, @stream_schema) do
       {:ok,
-       struct!(__MODULE__,
-         entry_ref: entry_ref,
-         writer: writer,
-         reader: reader
-       )}
+       %__MODULE__{
+         reader: config(params[:reader], :read),
+         writer: config(params[:writer], :write)
+       }}
     end
   end
 
-  @doc """
-  Initializes the archive with the formats specified in `new/1`
-  """
-  def init(%__MODULE__{} = archive) do
-    zipped =
-      [
-        archive.reader &&
-          {archive.reader.filters, &Nif.archiveFilterToInt/1,
-           &Nif.archive_read_support_filter_by_code/2, archive.reader.ref},
-        archive.writer &&
-          {archive.writer.format, &Nif.archiveFormatToInt/1, &Nif.archive_write_set_format/2,
-           archive.writer.ref},
-        archive.writer &&
-          {archive.writer.filters, &Nif.archiveFilterToInt/1, &Nif.archive_write_add_filter/2,
-           archive.writer.ref},
-        archive.reader &&
-          {archive.reader.formats, &Nif.archiveFormatToInt/1,
-           &Nif.archive_read_support_format_by_code/2, archive.reader.ref}
-      ]
-      |> Enum.filter(& &1)
+  defp config(false, _), do: nil
 
-    Enum.reduce_while(zipped, {:ok, archive}, &process_option_group/2)
-  end
-
-  defp process_option_group({options, code_func, support_func, ref}, {:ok, archive}) do
-    case apply_support(options, code_func, support_func, ref) do
-      :ok -> {:cont, {:ok, archive}}
-      error -> {:halt, error}
-    end
-  end
-
-  defp apply_support(options, code_func, support_func, ref) do
-    Enum.reduce_while(options, :ok, fn option, _acc ->
-      code = code_func.(option)
-
-      case call(support_func.(ref, code)) do
-        :ok -> {:cont, :ok}
-        {:error, _} = error -> {:halt, error}
-        _ -> {:halt, {:error, "Unknown failure for option #{inspect(option)}"}}
+  defp config(opts, :read) do
+    opts
+    |> Map.new()
+    |> Map.update!(:formats, &expand(&1, @read_formats -- [:raw]))
+    |> Map.update!(:filters, &expand(&1, @read_filters))
+    |> then(fn reader ->
+      if reader.as == :auto do
+        %{reader | as: if(File.regular?(reader.open), do: :file, else: :data)}
+      else
+        reader
       end
     end)
   end
 
-  def init!(%__MODULE__{} = archive), do: init(archive) |> unwrap!()
+  defp config(opts, :write) do
+    opts |> Map.new() |> Map.update!(:filters, &expand(&1, @write_filters))
+  end
 
-  defimpl Enumerable do
-    def reduce(
-          %Archive.Stream{reader: %{open: path_or_data, as: open_as} = reader} = archive,
-          acc,
-          fun
-        ) do
-      start_fn =
-        fn ->
-          with {:ok, %Archive.Stream{reader: %{ref: ref}} = archive} <-
-                 Archive.Stream.init(%{archive | writer: false}),
-               :ok <-
-                 if(open_as == :file,
-                   do: call(Nif.archive_read_open_filename(ref, path_or_data, 10240), ref),
-                   else: call(Nif.archive_read_open_memory(ref, path_or_data), ref)
-                 ) do
-            archive
-          else
-            {:error, reason} ->
-              raise Archive.Error,
-                reason: reason,
-                action: "read",
-                path: if(reader.as == :file, do: reader.open, else: "in-memory data")
-          end
-        end
+  defp expand(:all, all), do: all
+  defp expand([only: values], _), do: values
+  defp expand([except: values], all), do: all -- values
+  defp expand(values, _) when is_list(values), do: values
+  defp expand(value, _), do: [value]
 
-      next_fn = fn
-        %Archive.Stream{entry_ref: entry_ref, reader: %{ref: ref} = reader} = archive ->
-          with :ok <-
-                 call(
-                   Nif.archive_read_next_header(ref, entry_ref),
-                   ref
-                 ),
-               {:ok, %Archive.Entry{} = entry} <- Archive.Entry.new(),
-               {:ok, %Archive.Entry{} = entry} <- Archive.Entry.read_header(entry, archive) do
-            {[entry], archive}
-          else
-            {:error, error} when error in [:ArchiveFatal, :ArchiveEof] ->
-              {:halt, archive}
+  @doc "Allocates and configures native handles. Prefer protocol consumption for automatic cleanup."
+  def init(%__MODULE__{} = descriptor) do
+    entry = Nif.archive_entry_new()
+    reader = if descriptor.reader, do: Map.put(descriptor.reader, :ref, Nif.archive_read_new())
+    writer = if descriptor.writer, do: Map.put(descriptor.writer, :ref, Nif.archive_write_new())
+    active = %{descriptor | entry_ref: entry, reader: reader, writer: writer}
 
-            {:error, reason} ->
-              raise Archive.Error,
-                reason: reason,
-                action: "read",
-                path: if(reader.as == :file, do: reader.open, else: "in-memory data")
-          end
+    try do
+      if reader do
+        Enum.each(
+          reader.formats,
+          &checked(
+            fn ->
+              Nif.archive_read_support_format_by_code(reader.ref, Nif.archiveFormatToInt(&1))
+            end,
+            reader.ref
+          )
+        )
+
+        Enum.each(
+          reader.filters,
+          &checked(
+            fn ->
+              Nif.archive_read_support_filter_by_code(reader.ref, Nif.archiveFilterToInt(&1))
+            end,
+            reader.ref
+          )
+        )
+
+        if reader[:options],
+          do:
+            checked(
+              fn -> Nif.archive_read_set_options(reader.ref, reader.options) end,
+              reader.ref
+            )
+
+        Enum.each(
+          reader.passphrases,
+          &checked(fn -> Nif.archive_read_add_passphrase(reader.ref, &1) end, reader.ref)
+        )
       end
 
-      # Nif.archive_refresh does the following:
-      # 1. Closes and frees the object associated with the existing resource
-      # 2. Creates a new archive_reader object and updates the reference to point to this new object
-      #  It does this so we don't have to reassign the reader manually in Elixir since readers are only
-      #  good for one stream. After closing a reader you cannot reopen.
-      Stream.resource(start_fn, next_fn, &call(Nif.archive_read_refresh(&1.reader.ref))).(
-        acc,
-        fun
+      if writer do
+        checked(
+          fn ->
+            Nif.archive_write_set_format(writer.ref, Nif.archiveFormatToInt(writer.format))
+          end,
+          writer.ref
+        )
+
+        Enum.each(
+          writer.filters,
+          &checked(
+            fn -> Nif.archive_write_add_filter(writer.ref, Nif.archiveFilterToInt(&1)) end,
+            writer.ref
+          )
+        )
+
+        if writer[:options],
+          do:
+            checked(
+              fn -> Nif.archive_write_set_options(writer.ref, writer.options) end,
+              writer.ref
+            )
+
+        if writer[:passphrase],
+          do:
+            checked(
+              fn -> Nif.archive_write_set_passphrase(writer.ref, writer.passphrase) end,
+              writer.ref
+            )
+      end
+
+      {:ok, active}
+    rescue
+      e ->
+        close(active)
+        {:error, e}
+    end
+  end
+
+  def init!(descriptor), do: init(descriptor) |> unwrap!()
+
+  @doc false
+  def checked(fun, ref), do: Nif.safe_call(fun, ref) |> unwrap!()
+
+  @doc "Closes handles allocated by `init/1`. Protocol consumption closes automatically."
+  def close(%__MODULE__{} = active) do
+    if active.reader && active.reader[:ref],
+      do: Nif.safe_call(fn -> Nif.archive_read_free(active.reader.ref) end)
+
+    if active.writer && active.writer[:ref],
+      do: Nif.safe_call(fn -> Nif.archive_write_free(active.writer.ref) end)
+
+    if active.entry_ref, do: Nif.archive_entry_free(active.entry_ref)
+    :ok
+  end
+
+  @doc false
+  def open_reader(descriptor) do
+    active = init!(%{descriptor | writer: nil})
+
+    try do
+      r = active.reader
+
+      checked(
+        fn ->
+          if r.as == :file,
+            do: Nif.archive_read_open_filename(r.ref, r.open, r.block_size),
+            else: Nif.archive_read_open_memory(r.ref, r.open)
+        end,
+        r.ref
       )
+
+      active
+    rescue
+      e ->
+        close(active)
+        reraise e, __STACKTRACE__
+    end
+  end
+
+  @doc false
+  def with_reader(descriptor, fun) do
+    active = open_reader(descriptor)
+
+    try do
+      entries =
+        Stream.unfold(active, fn active ->
+          case next_entry(active) do
+            {:halt, _} -> nil
+            {[entry], next} -> {entry, next}
+          end
+        end)
+
+      fun.(entries, active.reader.ref)
+    after
+      close(active)
+    end
+  end
+
+  @doc false
+  def next_entry(active) do
+    case Nif.safe_call(fn ->
+           Nif.archive_read_next_header(active.reader.ref, active.entry_ref)
+         end) do
+      :ok ->
+        entry = Archive.Entry.new!() |> Archive.Entry.read_header(active) |> unwrap!()
+        {[entry], active}
+
+      {:error, :ArchiveEof} ->
+        {:halt, active}
+
+      {:error, reason} ->
+        raise Archive.Error,
+          reason: Nif.get_error_string(active.reader.ref) || reason,
+          action: "read",
+          path: active.reader.open
+    end
+  end
+
+  @doc false
+  def open_writer(descriptor) do
+    active = init!(%{descriptor | reader: nil})
+
+    try do
+      checked(
+        fn -> Nif.archive_write_open_filename(active.writer.ref, active.writer.file) end,
+        active.writer.ref
+      )
+
+      {active,
+       fn
+         acc, {:cont, %Archive.Entry{} = entry} ->
+           Archive.Entry.write!(entry, acc)
+           acc
+
+         acc, :done ->
+           try do
+             checked(fn -> Nif.archive_write_close(acc.writer.ref) end, acc.writer.ref)
+             descriptor
+           after
+             close(acc)
+           end
+
+         acc, :halt ->
+           Nif.safe_call(fn -> Nif.archive_write_fail(acc.writer.ref) end)
+           close(acc)
+       end}
+    rescue
+      e ->
+        close(active)
+        reraise e, __STACKTRACE__
+    end
+  end
+
+  defimpl Enumerable do
+    def reduce(%{reader: nil}, _, _), do: raise(ArgumentError, "stream has no reader")
+
+    def reduce(descriptor, acc, fun) do
+      Stream.resource(
+        fn -> Archive.Stream.open_reader(descriptor) end,
+        &Archive.Stream.next_entry/1,
+        &Archive.Stream.close/1
+      ).(acc, fun)
     end
 
-    def count(_stream) do
-      {:error, __MODULE__}
-    end
-
-    def member?(_stream, _term) do
-      {:error, __MODULE__}
-    end
-
-    def slice(_stream) do
-      {:error, __MODULE__}
-    end
+    def count(_), do: {:error, __MODULE__}
+    def member?(_, _), do: {:error, __MODULE__}
+    def slice(_), do: {:error, __MODULE__}
   end
 
   defimpl Collectable do
-    def into(%Archive.Stream{entry_ref: entry_ref, writer: %{file: path} = writer} = archive)
-        when is_reference(entry_ref) do
-      with {:ok, %Archive.Stream{writer: %{ref: ref}} = archive} <-
-             Archive.Stream.init(%{archive | reader: false}),
-           :ok <- call(Nif.archive_write_open_filename(ref, path), ref) do
-        {:ok, _into(archive)}
-      else
-        {:error, reason} ->
-          raise Archive.Error,
-            reason: reason,
-            action: "write",
-            path: writer.file
-      end
-    end
-
-    defp _into(
-           %Archive.Stream{writer: %{ref: ref} = writer, entry_ref: entry_ref} =
-             archive
-         ) do
-      fn
-        _, {:cont, %Archive.Entry{} = entry} ->
-          with {:ok, %Archive.Entry{} = entry} <- Archive.Entry.write_header(entry, archive),
-               :ok <- call(Nif.archive_entry_clear(entry_ref), ref) do
-            {[entry], archive}
-          else
-            {:error, reason} ->
-              raise Archive.Error,
-                reason: reason,
-                action: "write",
-                path: writer.file
-          end
-
-        _, :done ->
-          :ok = call(Nif.archive_write_refresh(ref))
-          archive
-
-        _, :halt ->
-          :ok = call(Nif.archive_write_refresh(ref))
-      end
-    end
+    def into(%{writer: nil}), do: raise(ArgumentError, "stream has no writer")
+    def into(descriptor), do: Archive.Stream.open_writer(descriptor)
   end
 
   defimpl Inspect do
-    def inspect(stream, _opts) do
-      reader_info = (stream.reader && inspect_reader(stream.reader)) || nil
-      writer_info = (stream.writer && inspect_writer(stream.writer)) || nil
-
-      content =
-        [reader_info, writer_info]
+    def inspect(stream, opts) do
+      parts =
+        [
+          stream.reader &&
+            "r#{if stream.reader.as == :file, do: Kernel.inspect(stream.reader.open), else: ":raw"}[#{Enum.join(stream.reader.formats, ",")}]",
+          stream.writer &&
+            "w#{Kernel.inspect(stream.writer.file)}[#{stream.writer.format}:#{Enum.join(stream.writer.filters, ",")}]"
+        ]
         |> Enum.reject(&is_nil/1)
         |> Enum.join(" ")
 
-      "#Archive.Stream<#{content}>"
+      Inspect.Algebra.string("#Archive.Stream<#{parts}>") |> Inspect.Algebra.color(:map, opts)
     end
-
-    defp inspect_reader(nil), do: nil
-
-    defp inspect_reader(reader) do
-      source = if reader.as == :file, do: inspect(reader.open), else: ":raw"
-      formats = format_list(reader.formats)
-      filters = filter_list(reader.filters, Nif.listReadableFilters())
-      "r#{source}[#{formats}:#{filters}]"
-    end
-
-    defp inspect_writer(nil), do: nil
-
-    defp inspect_writer(writer) do
-      "w#{inspect(writer.file)}[#{format_list(writer.format)}:#{filter_list(writer.filters, Nif.listWritableFilters())}]"
-    end
-
-    defp format_list(list) when is_list(list) do
-      if length(list) > 3 do
-        "#{length(list)}f"
-      else
-        list
-        |> Enum.map(&to_string/1)
-        |> Enum.map(&String.slice(&1, 0..2))
-        |> Enum.join(",")
-      end
-    end
-
-    defp format_list(item), do: format_list([item])
-
-    defp filter_list(filters, options) when is_list(filters) do
-      cond do
-        filters == options ->
-          "all"
-
-        length(filters) > 3 ->
-          "#{length(filters)}f"
-
-        true ->
-          filters
-          |> Enum.map(&to_string/1)
-          |> Enum.map(&String.slice(&1, 0..2))
-          |> Enum.join(",")
-      end
-    end
-
-    defp filter_list(item, options), do: filter_list([item], options)
   end
 end

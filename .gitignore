@@ -25,7 +25,6 @@ archive-*.tar
 # Temporary files, for example, from tests.
 /tmp/
 
-.Elixir.*.zig
 
 .vscode
 
@@ -34,3 +33,11 @@ archive-*.tar
 .elixir_ls
 
 .elixir-tools
+
+/priv/host/
+/priv/lib/
+**/__pycache__/
+
+/native/archive/target/
+/priv/native/
+/artifacts/

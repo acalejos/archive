@@ -4,11 +4,19 @@ defmodule Archive.Stat do
 
   @file_kinds Archive.Nif.get_file_kinds() |> Map.drop([:mask])
   @mask Archive.Nif.get_file_kinds() |> Map.get(:mask)
-  @lookup Enum.into(@file_kinds, %{}, fn {k, v} -> {v, k} end)
+  @lookup @file_kinds
+          |> Map.put(:regular, @file_kinds.file)
+          |> Map.delete(:file)
+          |> Map.delete(:unknown)
+          |> Map.put(:symlink, @file_kinds.sym_link)
+          |> Map.delete(:sym_link)
+          |> Map.put(:device, @file_kinds.character_device)
+          |> Map.delete(:character_device)
+          |> Enum.into(%{}, fn {k, v} -> {v, k} end)
 
   def file_kinds(), do: @file_kinds
 
-  def file_stat_to_zig_map(%File.Stat{} = stat) do
+  def file_stat_to_native_map(%File.Stat{} = stat) do
     %{
       ino: convert_integer(stat.inode),
       size: convert_integer(stat.size),
@@ -17,43 +25,21 @@ defmodule Archive.Stat do
       gid: convert_integer(stat.gid),
       uid: convert_integer(stat.uid)
     }
-    |> Map.merge(to_zig_timespec(stat))
-    |> Map.merge(to_zig_device(stat))
+    |> Map.merge(to_native_timespec(stat))
+    |> Map.merge(to_native_device(stat))
   end
 
-  defp to_zig_device(%{major_device: devmajor, minor_device: devminor}) do
-    %{dev: combine_major_minor(devmajor, devminor)}
+  defp to_native_device(%{major_device: devmajor, minor_device: devminor}) do
+    # File.Stat uses these names for st_dev and st_rdev, not split device bits.
+    %{dev: convert_integer(devmajor), rdev: convert_integer(devminor)}
   end
 
-  defp to_zig_timespec(%File.Stat{atime: atime, mtime: mtime, ctime: ctime}) do
-    case :os.type() do
-      {:unix, :darwin} ->
-        %{
-          atimespec: %{tv_sec: extract_seconds(atime), tv_nsec: extract_nanoseconds(atime)},
-          mtimespec: %{tv_sec: extract_seconds(mtime), tv_nsec: extract_nanoseconds(mtime)},
-          ctimespec: %{tv_sec: extract_seconds(ctime), tv_nsec: extract_nanoseconds(ctime)},
-          # These are required since it checks for type on the parameter
-          # these correspond to std.c.darwin's stat
-          birthtimespec: %{tv_sec: 0, tv_nsec: 0},
-          rdev: 0,
-          blocks: 0,
-          blksize: 0,
-          flags: 0,
-          gen: 0,
-          lspare: 0,
-          qspare: [0, 0]
-        }
-
-      {:unix, _} ->
-        %{
-          atim: %{sec: extract_seconds(atime), nsec: extract_nanoseconds(atime)},
-          mtim: %{sec: extract_seconds(mtime), nsec: extract_nanoseconds(mtime)},
-          ctim: %{sec: extract_seconds(ctime), nsec: extract_nanoseconds(ctime)},
-          rdev: 0,
-          blksize: 0,
-          blocks: 0
-        }
-    end
+  defp to_native_timespec(%File.Stat{atime: atime, mtime: mtime, ctime: ctime}) do
+    %{
+      atim: %{sec: extract_seconds(atime), nsec: 0},
+      mtim: %{sec: extract_seconds(mtime), nsec: 0},
+      ctim: %{sec: extract_seconds(ctime), nsec: 0}
+    }
   end
 
   defp convert_integer(:undefined), do: 0
@@ -70,38 +56,27 @@ defmodule Archive.Stat do
   defp extract_seconds(unix_timestamp) when is_integer(unix_timestamp), do: unix_timestamp
   defp extract_seconds(_), do: 0
 
-  defp extract_nanoseconds(:undefined), do: 0
-  # Calendar format doesn't include nanoseconds
-  defp extract_nanoseconds({{_, _, _}, {_, _, _}}), do: 0
-  # For integer timestamps, we don't have nanosecond precision
-  defp extract_nanoseconds(_), do: 0
-
   @doc false
-  def to_file_stat(zig_stat) do
+  def to_file_stat(native_stat) do
     %File.Stat{
-      access: get_access(zig_stat.mode),
-      gid: zig_stat.gid,
-      inode: zig_stat.ino,
-      links: zig_stat.nlink,
-      mode: zig_stat.mode,
-      size: zig_stat.size,
-      uid: zig_stat.uid
+      access: get_access(native_stat.mode),
+      gid: native_stat.gid,
+      inode: native_stat.ino,
+      links: native_stat.nlink,
+      mode: native_stat.mode,
+      size: native_stat.size,
+      uid: native_stat.uid
     }
-    |> struct!(convert_time(zig_stat))
-    |> struct!(major_minor(zig_stat))
-    |> struct!(convert_type(zig_stat))
+    |> struct!(convert_time(native_stat))
+    |> struct!(major_minor(native_stat))
+    |> struct!(convert_type(native_stat))
   end
 
-  def major_minor(%{dev: dev}) when is_integer(dev) do
-    # On most Unix-like systems:
-    # - major = dev >> 8
-    # - minor = dev & 0xFF
-    # However, this can vary by OS. Here's a more portable approach:
-    major = div(dev, 256)
-    minor = rem(dev, 256)
+  def major_minor(%{dev: dev, rdev: rdev}) when is_integer(dev) and is_integer(rdev),
+    do: %{major_device: dev, minor_device: rdev}
 
-    %{major_device: major, minor_device: minor}
-  end
+  def major_minor(%{dev: dev}) when is_integer(dev),
+    do: %{major_device: dev, minor_device: 0}
 
   def combine_major_minor(major, minor) when is_integer(major) and is_integer(minor) do
     # Ensure that major and minor are within valid ranges
