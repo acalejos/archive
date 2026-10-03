@@ -1,0 +1,87 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  # Finish native checks and save their cache; newer commits replace pending runs.
+  cancel-in-progress: false
+jobs:
+  test:
+    name: ${{ matrix.os }} / Elixir ${{ matrix.elixir }} / OTP ${{ matrix.otp }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    env:
+      ARCHIVE_BUILD: '1'
+      MACOSX_DEPLOYMENT_TARGET: '11.0'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            elixir: '1.17'
+            otp: '27'
+          - os: ubuntu-24.04
+            elixir: '1.19'
+            otp: '28'
+          - os: ubuntu-24.04-arm
+            elixir: '1.19'
+            otp: '28'
+          - os: macos-15-intel
+            elixir: '1.19'
+            otp: '28'
+          - os: macos-15
+            elixir: '1.19'
+            otp: '28'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ matrix.elixir }}
+          otp-version: ${{ matrix.otp }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Native build tools (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y clang libclang-dev cmake ninja-build perl
+      - name: Native build tools (macOS)
+        if: runner.os == 'macOS'
+        run: brew install cmake ninja
+      - name: Rust toolchain
+        run: rustup toolchain install 1.95.0 --profile minimal --component rustfmt,clippy
+      - uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            native/archive/target
+            _build/native-downloads
+            ~/.cargo/registry
+          key: source-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('mix.lock', 'native/archive/Cargo.lock', 'native/dependencies.json') }}-${{ github.sha }}
+          restore-keys: |
+            source-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('mix.lock', 'native/archive/Cargo.lock', 'native/dependencies.json') }}-
+            source-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('mix.lock', 'native/archive/Cargo.lock', 'native/dependencies.json') }}
+      - run: mix deps.get
+      - run: python3 scripts/generate_bindings.py --check
+      - run: cargo fmt --manifest-path native/archive/Cargo.toml --check
+      - run: mix format --check-formatted
+      - run: mix test --cover
+      - run: cargo clippy --manifest-path native/archive/Cargo.toml --locked --release -- -D warnings
+      - name: Documentation
+        env:
+          MIX_ENV: docs
+        run: mix docs --warnings-as-errors
+      - run: mix hex.build
+      - run: python3 scripts/verify_package.py archive-*.tar
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: checks-${{ matrix.os }}-${{ matrix.elixir }}-${{ matrix.otp }}
+          path: |
+            cover/
+            doc/
+          if-no-files-found: ignore

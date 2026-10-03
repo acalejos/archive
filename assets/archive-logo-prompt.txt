@@ -1,0 +1,15 @@
+Archive logo concept
+Generated using the built-in image_gen tool.
+
+Initial prompt
+
+Use case: logo-brand.
+Asset type: standalone logo symbol for Archive, an Elixir library that reads and writes many archive formats using elegant Enumerable/Collectable protocols and streaming.
+Primary request: design a distinctive, polished library logo: an archive box built from three broad, continuous flowing ribbons, folding together into a compact geometric mark. The ribbons suggest streams entering and leaving an archive. The central negative space should subtly suggest a capital A without turning into a literal letter illustration.
+Style: flat, vector-friendly identity design, precise geometry with gently rounded corners. Restrained Elixir-inspired plum and violet tones with strong contrast. A clear, memorable silhouette that remains legible as a small documentation sidebar icon.
+Composition: a single centered symbol with generous even padding on a truly transparent background. No wordmark or any other text.
+Constraints: two or three solid colors, clean sharp edges; no gradients, shadows, textures, lighting, photorealism, mockups, presentation boards, borders, watermarks, tiny ornament, generic folder icon, zipper, or separate floating symbols. The form should feel cohesive, calm, and beautifully crafted.
+
+Refinement prompt
+
+Refine this Archive library logo while preserving the interlocking ribbon geometry, central negative-space A, orientation, and proportions. Change only the rendering: make it a precise FLAT logo using exactly three solid purple colors, one uniform color per ribbon face, with no gradients, shading, shadows, texture, or lighting. Clean all edges and remove stray blue pixels, speckles, or tiny fragments around and inside the symbol. Keep the transparent background genuinely transparent. One centered mark with even padding, no text. Intended for a polished Elixir library identity and small documentation sidebar icon.

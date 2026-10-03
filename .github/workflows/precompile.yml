@@ -1,0 +1,208 @@
+name: Precompile
+on:
+  push:
+    tags: ['v*']
+  pull_request:
+    paths:
+      - 'native/**'
+      - 'vendor/**'
+      - 'scripts/**'
+      - 'lib/**'
+      - 'test/**'
+      - 'mix.exs'
+      - 'mix.lock'
+      - '.github/workflows/precompile.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: precompile-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+jobs:
+  build:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-24.04
+            image: quay.io/pypa/manylinux_2_28_x86_64
+          - target: aarch64-unknown-linux-gnu
+            runner: ubuntu-24.04-arm
+            image: quay.io/pypa/manylinux_2_28_aarch64
+          - target: x86_64-unknown-linux-musl
+            runner: ubuntu-24.04
+            image: alpine:3.22
+          - target: aarch64-unknown-linux-musl
+            runner: ubuntu-24.04-arm
+            image: alpine:3.22
+          - target: x86_64-apple-darwin
+            runner: macos-15-intel
+          - target: aarch64-apple-darwin
+            runner: macos-15
+          - target: x86_64-pc-windows-msvc
+            runner: windows-2022
+          - target: aarch64-pc-windows-msvc
+            runner: windows-11-arm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        if: runner.os != 'Linux'
+        with:
+          python-version: '3.12'
+          architecture: ${{ runner.os == 'Windows' && 'x64' || runner.arch == 'ARM64' && 'arm64' || 'x64' }}
+      - name: Native macOS tools
+        if: runner.os == 'macOS'
+        run: brew install cmake ninja
+      - name: MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ startsWith(matrix.target, 'aarch64') && 'arm64' || 'amd64' }}
+      - name: Windows tools and Rust host
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # Rust's x64 build helpers load x64 libclang; C compilation uses the
+          # runner's native MSVC host to avoid emulating every OpenSSL C file.
+          $compiler = (Get-Command cl.exe).Source
+          "CC=$compiler" >> $env:GITHUB_ENV
+          if ('${{ matrix.target }}' -eq 'aarch64-pc-windows-msvc' -and $compiler -notmatch 'HostARM64') {
+            throw "Expected native ARM64 MSVC host, got $compiler"
+          }
+          choco install llvm ninja strawberryperl -y --no-progress
+          "C:\Program Files\LLVM\bin" >> $env:GITHUB_PATH
+          "C:\Strawberry\perl\bin" >> $env:GITHUB_PATH
+          "LIBCLANG_PATH=C:\Program Files\LLVM\bin" >> $env:GITHUB_ENV
+          rustup set default-host x86_64-pc-windows-msvc
+          rustup toolchain install 1.95.0-x86_64-pc-windows-msvc --profile minimal
+          rustup default 1.95.0-x86_64-pc-windows-msvc
+          rustup target add --toolchain 1.95.0-x86_64-pc-windows-msvc ${{ matrix.target }}
+      - name: Rust (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          rustup toolchain install 1.95.0 --profile minimal
+          rustup target add --toolchain 1.95.0 ${{ matrix.target }}
+      - name: Restore Windows native build cache
+        if: runner.os == 'Windows'
+        id: windows-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            native/archive/target
+            _build/native-downloads
+            ~/.cargo/registry
+          key: native-${{ matrix.target }}-${{ hashFiles('native/archive/Cargo.lock', 'native/dependencies.json') }}-${{ github.sha }}
+          restore-keys: native-${{ matrix.target }}-${{ hashFiles('native/archive/Cargo.lock', 'native/dependencies.json') }}-
+      - name: Build Linux artifact in baseline container
+        if: runner.os == 'Linux'
+        env:
+          TARGET: ${{ matrix.target }}
+          IMAGE: ${{ matrix.image }}
+        run: |
+          docker run --rm -e TARGET -v "$PWD:/work" -w /work "$IMAGE" sh scripts/build_linux.sh
+          sudo chown -R "$(id -u):$(id -g)" artifacts
+      - name: Build native artifact
+        if: runner.os != 'Linux'
+        run: python scripts/build_release.py --target ${{ matrix.target }}
+      - name: Save Windows native build cache
+        if: always() && runner.os == 'Windows' && steps.windows-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            native/archive/target
+            _build/native-downloads
+            ~/.cargo/registry
+          key: ${{ steps.windows-cache.outputs.cache-primary-key }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nif-${{ matrix.target }}
+          path: artifacts/*.tar.gz
+          if-no-files-found: error
+  package:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: nif-*
+          path: artifacts
+          merge-multiple: true
+      - name: Require all eight artifacts and generate checksums
+        run: python3 scripts/package_nif.py checksums
+      - name: Verify release version
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          python3 -c 'import os; from scripts.package_nif import version; assert os.environ["TAG"] == "v" + version(), "Tag must match mix.exs"'
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.19'
+          otp-version: '28'
+      - run: mix deps.get
+      - run: mix hex.build
+      - run: python3 scripts/verify_package.py --require-checksums archive-*.tar
+      - name: Stage checksums and source package
+        run: cp checksum-Elixir.Archive.Nif.exs archive-*.tar artifacts/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-package
+          path: artifacts/
+          if-no-files-found: error
+  smoke:
+    needs: package
+    name: Download and load / ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+          - runner: ubuntu-24.04-arm
+          - runner: macos-15-intel
+          - runner: macos-15
+          - runner: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-package
+          path: artifacts
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.19'
+          otp-version: '28'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: ${{ runner.os == 'Windows' && 'x64' || runner.arch == 'ARM64' && 'arm64' || 'x64' }}
+      - name: Fetch locked dependencies for installation tests
+        env:
+          MIX_ENV: test
+        run: mix deps.get
+      - name: Download, verify, and run from the actual Hex package
+        run: python scripts/smoke_precompiled.py
+  release:
+    needs: [package, smoke]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-package
+          path: artifacts
+      - name: Publish assets and prepared Hex package
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create "$TAG" artifacts/* --verify-tag --generate-notes

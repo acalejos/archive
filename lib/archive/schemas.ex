@@ -13,7 +13,7 @@ defmodule Archive.Schemas do
   @extract_opts [
     flags: [
       type: {:or, [{:list, {:in, @extract_flags}}, :non_neg_integer]},
-      default: [],
+      default: [:secure_symlinks, :secure_nodotdot, :secure_noabsolutepaths],
       doc: @extract_doc
     ],
     to: [
@@ -42,7 +42,7 @@ defmodule Archive.Schemas do
              ]
            ]
          ]},
-      default: :all,
+      default: @read_formats -- [:raw],
       doc: """
       Specifies the archive formats to support when reading. Can be a single format,
       a list of such formats, or a keyword list with either `:only` or `:except` keys
@@ -73,6 +73,9 @@ defmodule Archive.Schemas do
       containing lists of filters. Available reader filters are `#{inspect(@read_filters)}`
       """
     ],
+    block_size: [type: :pos_integer, default: 65536, doc: "File I/O block size in bytes."],
+    options: [type: :string, doc: "libarchive reader option string."],
+    passphrases: [type: {:list, :string}, default: [], doc: "Decryption passphrases."],
     open: [
       type: :string,
       required: true,
@@ -103,6 +106,8 @@ defmodule Archive.Schemas do
       or a list of such filters. Available write filters are `#{inspect(@write_filters)}`.
       """
     ],
+    options: [type: :string, doc: "libarchive writer option string."],
+    passphrase: [type: :string, doc: "Encryption passphrase (format dependent)."],
     file: [
       type: :string,
       required: true,
@@ -116,8 +121,8 @@ defmodule Archive.Schemas do
   @stream_opts [
     writer:
       [
-        type: {:or, [:boolean, keyword_list: @writer_opts]},
-        default: [format: :tar, filters: :none],
+        type: {:or, [{:in, [false]}, keyword_list: @writer_opts]},
+        default: false,
         # keys: @writer_opts,
         subsection: """
         ### Writer Options
@@ -130,7 +135,7 @@ defmodule Archive.Schemas do
     reader:
       [
         type: {:or, [{:in, [false]}, keyword_list: @reader_opts]},
-        default: [formats: @read_formats, filters: @read_filters],
+        default: false,
         subsection: """
         ### Reader Options
 
