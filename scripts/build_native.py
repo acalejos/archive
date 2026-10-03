@@ -7,6 +7,8 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
+import time
 import tarfile
 import urllib.request
 
@@ -14,6 +16,24 @@ ROOT = Path(__file__).resolve().parent.parent
 
 def run(args):
     subprocess.run([str(arg) for arg in args], check=True)
+
+def download(url, expected_sha256, dest):
+    temp = dest.with_suffix('.tmp')
+    for attempt in range(1, 4):
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'archive-native-build'})
+            with urllib.request.urlopen(req, timeout=120) as response, temp.open('wb') as output:
+                shutil.copyfileobj(response, output)
+            actual = hashlib.sha256(temp.read_bytes()).hexdigest()
+            if actual != expected_sha256:
+                raise RuntimeError(f'{dest.name} checksum mismatch: expected {expected_sha256}, got {actual}')
+            temp.replace(dest)
+            return
+        except (OSError, RuntimeError) as error:
+            temp.unlink(missing_ok=True)
+            if attempt == 3: raise
+            print(f'Download attempt {attempt} failed: {error}; retrying', file=sys.stderr)
+            time.sleep(attempt)
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -50,15 +70,7 @@ def main():
             continue
         archive = cache / (name + '-' + dep['version'] + '.tar')
         if not archive.exists():
-            req = urllib.request.Request(dep['url'], headers={'User-Agent': 'archive-native-build'})
-            temp = archive.with_suffix('.tmp')
-            with urllib.request.urlopen(req, timeout=120) as response:
-                with temp.open('wb') as dest:
-                    shutil.copyfileobj(response, dest)
-            if hashlib.sha256(temp.read_bytes()).hexdigest() != dep['sha256']:
-                temp.unlink()
-                raise RuntimeError(f'{name} checksum mismatch')
-            temp.replace(archive)
+            download(dep['url'], dep['sha256'], archive)
         if hashlib.sha256(archive.read_bytes()).hexdigest() != dep['sha256']:
             raise RuntimeError(f'{name} checksum mismatch')
         unpack = out / ('source-' + name)

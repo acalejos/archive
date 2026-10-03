@@ -83,7 +83,18 @@ def audit(path, target):
         if target.endswith('-gnu') and required:
             assert max(required) <= (2,28), f'glibc baseline exceeded: {max(required)}'
         if target.endswith('-musl'):
-            assert not required, 'musl artifact depends on glibc'
+            assert not any(d.startswith(('libc.so.', 'ld-linux')) for d in deps), f'musl artifact depends on glibc: {deps}'
+            # GCC's ARM64 musl unwinder exports historical GLIBC_2.0 versions.
+            # Inspect their provider, rather than treating that name as libc.
+            provider = None
+            unexpected = []
+            for line in symbols.partition('Version needs section')[2].splitlines():
+                match = re.search(r'File: (\S+)', line)
+                if match: provider = match.group(1)
+                for name in re.findall(r'Name: (GLIBC_[0-9.]+)', line):
+                    if (provider, name) != ('libgcc_s.so.1', 'GLIBC_2.0'):
+                        unexpected.append((provider, name))
+            assert not unexpected, f'musl artifact has glibc version requirements: {unexpected}'
     if bad: raise ValueError(f'Non-system shared dependencies: {bad}')
     print(f'Audited {target}: {deps}')
 
