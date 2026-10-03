@@ -1,103 +1,43 @@
 defmodule Archive do
   @moduledoc """
-  `Archive` provides Elixir bindings to [`libarchive`](https://github.com/libarchive/libarchive) through the power of the wonderful [`Zigler`](https://hexdocs.pm/zigler/Zig.html) library.
+  Archive operations built on `Archive.Stream`'s Enumerable and Collectable APIs.
 
-  `Archive` provides a high-level API for interacting with archive files.
+  * `list/2` returns a snapshot of entry metadata without loading bodies.
+  * `read/2` returns a snapshot with retained bodies by default.
+  * `fetch/3` reads a single member without loading other bodies.
+  * `write/3` writes entries or a loaded snapshot using bounded streaming.
+  * `extract/2` extracts directly from a source without materializing its contents.
 
-  ### Intro to `Archive`'s APIs
-  <!-- tabs-open -->
+  Every operation has a bang variant. Non-bang operations return `{:ok, value}`
+  for reads, `:ok` for writes/extraction, or `{:error, exception}`. Bang variants
+  raise on failure.
 
-  ### High-Level API
+  Sources are file paths, `{:file, path}`, `{:data, binary}`, or configured reader
+  descriptors. Bare binaries at this level are file paths; pass `{:data, binary}`
+  for in-memory archives. Low-level `reader/2` retains its `as: :auto` convenience.
 
-  The `Archive` API is the highest-level API offered by `Archive`, and mostly consists of convenience functions for common
-  use cases with archives. It involves using the `Archive` struct as a container for archive information extracted from
-  archives using the `Archive.Stream` API.
+      Archive.list!("backup.tar.gz")
+      entry = Archive.fetch!("backup.tar.gz", "config.json")
+      entry.data
 
-  It also implements the `Inspect` protocol specially for providing information about the archive in a succinct manner.
+      archive = Archive.read!("input.zip")
+      Archive.write!(archive, "output.tar.gz", filters: :gzip)
 
-  ### Streaming API
+  Snapshots preserve entry order, duplicate paths, and native metadata. Returned
+  entries have no live reader cursor. A metadata-only snapshot cannot supply
+  nonempty bodies to a writer; read bodies before retaining or rewriting entries.
+  `read/2` intentionally materializes bodies in memory. For large archives, compose
+  `reader!/2`, ordinary Elixir streams, and `writer!/2` instead.
 
-  `Archive` implements archive traversal, reading, and writing as
-  streams. It does this in the `Archive.Stream` module.
+      Archive.reader!("input.tar.gz")
+      |> Stream.reject(&String.ends_with?(&1.path, ".tmp"))
+      |> Enum.into(Archive.writer!("output.zip", format: :zip))
 
-  `Archive.Stream` implements both the `Enumerable` and `Collectable` protocol, modeled after `File.Stream` from the
-  standard library. This allows you to read from an archive, perform transformations, and redirect to a new archive,
-  all lazily.
+  See the [high-level guide](high_level.md) for operation contracts and the
+  [streaming guide](streaming.md) for body lifetimes and bounded copying.
 
-  All implementations in the high-level API are built off of the streaming API.
-
-  ### Low-Level API
-
-  > ####  Caution {: .error}
-  >
-  > The low-level API is a nearly one-to-one mapping to the `libarchive` C API. All of the low-level API
-  > lives in the `Archive.Nif` module, and it is highly recommended to not use this API directly.
-  >
-  > If you choose to use this API, you will need to carefully consider resource management and proper error checking.
-
-  <!-- tabs-close -->
-
-  Realistically, you will likely mix the High-Level API and the Streaming API, since the Streaming API is required to
-  traverse the archive.
-
-  ## Concepts
-
-  Like `libarchive`, `Archive` treats all files as streams first and foremost, but provides many convenient high-level APIs to make it more natural to work with archive.
-
-  There are four major operations that `Archive` performs:
-  * [Reading Archives](#module-reading-archives)
-  * [Writing Archives](#module-writing-archives)
-  * [Writing to Disk](#module-writing-to-disk)
-  * [Extracting to Disk](#module-extracting-to-disk)
-
-  ### Reading Archives
-
-  As streams, archives are not conducive to random-access reads or seeks. Once archives are opened and read, they must be closed and reopened to read again. It is often a two-stage process to read an archive, where you read a list of the contents first, then selectively filter which items you want suring a second pass.
-
-  `Archive` takes care of all resource allocations, initializations, and cleanup for you. Using the high-level API, you only need to provide a mapping function to determine what to do with each entry as it is streamed.
-
-  The mapping function will accept an `Archive.Entry` struct, which will contain metadata (such as path and size) information about the entry. You can use that information to determine what to do in your function.
-
-  You can also use function from the `Archive.Entry` module to perform different operations with the entry (most commonly `Archive.Entry.load/2`).
-
-  ### Writing Archives
-
-  TODO
-
-  ### Writing to Disk
-
-  TODO
-
-  ### Extracting to Disk
-
-  TODO
-
-  ## `Inspect`
-
-  `Archive`, `Archive.Stream`, and `Archive.Entry` provide custom implementations for the `Inspect` protocol.
-
-  When inspecting `Archive`, the following custom options can be supplied to the `custom_options` option of inspect:
-
-  * `:depth` - Depth of directories to display. Defaults to 3.
-  * `:breadth` - Breadth of items to display. Defaults to 2.
-
-  ### Examples
-
-  ```elixir
-  IO.inspect(%Archive{} = a, custom_options: [depth: 3, breadth: 2])
-  ```
-
-  ```
-  #Archive[zip]<
-  147 entries (40 loaded), 506.0 KB
-  ───────────────
-    .editorconfig (166 B)
-    .github/ (1 items, 338 B)
-      workflows/ (1 items, 338 B)
-        deploy-theme.yml (338 B)
-    ... and 21 more
-  >
-  ```
+  `Inspect` shows a compact archive tree. Its `:custom_options` support `:depth`
+  (default 3) and `:breadth` (default 2).
   """
   alias Archive.Entry
   use Archive.Nif
@@ -107,7 +47,7 @@ defmodule Archive do
     :format,
     :compression,
     :description,
-    :count,
+    count: 0,
     entries: [],
     total_size: 0
   ]
@@ -119,115 +59,66 @@ defmodule Archive do
     struct!(__MODULE__)
   end
 
-  @doc """
-  Extracts the archive from the reader stream, extracting the archive
-  to disk.
+  @type source :: Path.t() | {:file, Path.t()} | {:data, binary()} | Archive.Stream.t()
+  @type error_result :: {:error, Exception.t()}
+  @type t :: %__MODULE__{
+          entries: [Entry.t()],
+          count: non_neg_integer(),
+          total_size: non_neg_integer(),
+          format: atom() | nil,
+          compression: atom() | nil,
+          description: String.t() | nil
+        }
 
-  As opposed to the other `write` operations, which write a new archive,
-  `extract` extracts the archive to disk at the target location.
+  @doc """
+  Extracts a source to disk without loading bodies. Returns `:ok` or an error tuple.
+
+  Secure extraction flags are enabled by default. Pass `reader: [...]` to
+  configure reader options (such as passphrases), and `to:` for the destination.
+  Extraction may leave files written before an error; it does not roll back.
 
   ## Options
   #{NimbleOptions.docs(@extract_schema)}
   """
-  def extract(%Archive.Stream{} = stream, opts \\ []) do
-    {:ok, opts} = Archive.Utils.handle_extract_opts(opts)
-    {destination, opts} = Keyword.pop(opts, :to)
+  @spec extract(source(), keyword()) :: :ok | error_result()
+  def extract(source, opts \\ []) do
+    operation(fn ->
+      {reader_opts, opts} = Keyword.pop(opts, :reader, [])
 
-    if destination do
-      File.cd!(destination, fn -> extract_archive(stream, opts) end)
-    else
-      extract_archive(stream, opts)
-    end
-  end
-
-  defp extract_archive(%Archive.Stream{} = stream, opts) do
-    Enum.each(stream, fn entry ->
-      Entry.extract(entry, stream, opts)
-    end)
-  end
-
-  def index(%__MODULE__{} = archive, %Archive.Stream{} = stream) do
-    archive
-    |> update_entries(stream)
-    |> update_info(stream)
-  end
-
-  def update_info(%__MODULE__{} = archive, %Archive.Stream{} = stream) do
-    Enum.reduce_while(stream, archive, fn %Entry{},
-                                          %Archive{
-                                            compression: compression,
-                                            format: format,
-                                            description: description
-                                          } = acc ->
-      format =
-        if format do
-          format
-        else
-          case call(Nif.archive_format(stream.reader.ref)) do
-            {:ok, code} when is_integer(code) ->
-              Nif.archiveFormatToAtom(code)
-
-            _ ->
-              nil
-          end
-        end
-
-      compression =
-        if compression do
-          compression
-        else
-          case call(Nif.archive_compression(stream.reader.ref)) do
-            {:ok, code} when is_integer(code) ->
-              Nif.archiveFilterToAtom(code)
-
-            _ ->
-              nil
-          end
-        end
-
-      description =
-        if description do
-          description
-        else
-          case call(Nif.archive_format_name(stream.reader.ref)) do
-            {:ok, name} when is_binary(name) ->
-              name
-
-            _ ->
-              nil
-          end
-        end
-
-      acc =
-        %{
-          acc
-          | format: format,
-            description: description,
-            compression: compression
-        }
-
-      if format && description && compression do
-        {:halt, acc}
-      else
-        {:cont, acc}
+      with {:ok, stream} <- source_reader(source, reader_opts),
+           {:ok, opts} <- Archive.Utils.handle_extract_opts(opts) do
+        Enum.each(stream, fn entry -> Entry.extract_prepared(entry, opts) |> unwrap!() end)
       end
     end)
   end
 
-  def update_entries(%__MODULE__{} = archive, %Archive.Stream{} = stream) do
-    archive =
-      Enum.reduce(stream, %{archive | entries: []}, fn %Entry{stat: %File.Stat{size: size}} =
-                                                         entry,
-                                                       %Archive{
-                                                         total_size: total_size,
-                                                         entries: entries
-                                                       } ->
-        entries = [entry | entries]
-        total_size = total_size + size
-        %{archive | entries: entries, total_size: total_size}
-      end)
+  @doc "Extracts a source to disk, raising on failure."
+  @spec extract!(source(), keyword()) :: :ok
+  def extract!(source, opts \\ []), do: extract(source, opts) |> unwrap!()
 
-    Map.update!(archive, :entries, &Enum.reverse/1)
+  @doc "Compatibility helper; prefer `list/2` to create a metadata snapshot."
+  def index(%__MODULE__{} = archive, %Archive.Stream{} = stream) do
+    snapshot = list!(stream)
+
+    %{
+      snapshot
+      | format: archive.format || snapshot.format,
+        compression: archive.compression || snapshot.compression,
+        description: archive.description || snapshot.description
+    }
+  end
+
+  @doc false
+  def update_info(%__MODULE__{} = archive, %Archive.Stream{} = stream) do
+    Enum.reduce_while(stream, archive, fn entry, acc ->
+      {:halt, info(acc, entry.source.reader)}
+    end)
+  end
+
+  @doc false
+  def update_entries(%__MODULE__{} = archive, %Archive.Stream{} = stream) do
+    snapshot = list!(stream)
+    %{archive | entries: snapshot.entries, count: snapshot.count, total_size: snapshot.total_size}
   end
 
   @doc """
@@ -245,7 +136,7 @@ defmodule Archive do
   @doc """
   Creates a new `Archive.Stream` that is capable of writing an archive.
 
-  Opens the writer at the given filepath.
+  The descriptor opens the given filepath when collection starts.
 
   ## Options
   See [Writer Options](#stream/1-writer-options) for a list of the full options.
@@ -271,6 +162,156 @@ defmodule Archive do
 
   def reader!(path, opts \\ []), do: reader(path, opts) |> unwrap!()
 
+  @doc """
+  Lists entry metadata in one traversal, returning `{:ok, snapshot}`.
+
+  Bodies remain unread. Snapshots preserve ordered entries and duplicate paths,
+  and contain no reader cursor. Accepts the same reader options as `reader/2`.
+  """
+  @spec list(source(), keyword()) :: {:ok, t()} | error_result()
+  def list(source, opts \\ []), do: snapshot(source, opts, false)
+  @spec list!(source(), keyword()) :: t()
+  def list!(source, opts \\ []), do: list(source, opts) |> unwrap!()
+
+  @doc """
+  Reads a source into an owned snapshot, returning `{:ok, snapshot}`.
+
+  Loads all entry bodies by default. `load: false` is supported for compatibility;
+  prefer `list/2` for that operation. Remaining options are reader options.
+  This operation uses memory proportional to the retained bodies.
+  """
+  @spec read(source(), keyword()) :: {:ok, t()} | error_result()
+  def read(source, opts \\ []) do
+    {load?, opts} = Keyword.pop(opts, :load, true)
+
+    with {:ok, _} <- NimbleOptions.validate([load: load?], load: [type: :boolean]) do
+      snapshot(source, opts, load?)
+    end
+  end
+
+  @spec read!(source(), keyword()) :: t()
+  def read!(source, opts \\ []), do: read(source, opts) |> unwrap!()
+
+  @doc """
+  Reads the first member matching an exact archive pathname.
+
+  Returns `{:ok, entry}` with a retained body or an `Archive.Error` whose reason
+  is `:EntryNotFound`. Other member bodies are skipped. Duplicate paths select
+  the first occurrence; no pathname normalization is performed.
+  """
+  @spec fetch(source(), String.t(), keyword()) :: {:ok, Entry.t()} | error_result()
+  def fetch(source, path, opts \\ []) when is_binary(path) do
+    operation(fn ->
+      with {:ok, stream} <- source_reader(source, opts) do
+        missing =
+          {:error, %Archive.Error{reason: :EntryNotFound, action: "fetch entry", path: path}}
+
+        Enum.reduce_while(stream, missing, fn entry, acc ->
+          if entry.path == path,
+            do: {:halt, {:ok, entry |> Entry.read_data!() |> Entry.detach()}},
+            else: {:cont, acc}
+        end)
+      end
+    end)
+  end
+
+  @spec fetch!(source(), String.t(), keyword()) :: Entry.t()
+  def fetch!(source, path, opts \\ []), do: fetch(source, path, opts) |> unwrap!()
+
+  @doc """
+  Writes an enumerable of entries or a loaded snapshot. Returns `:ok` or an error.
+
+  Bodies are forwarded in bounded chunks. The output is finalized on success;
+  a failure can leave a partial output file. Returns no native writer state.
+  Accepts the same options as `writer/2`.
+  """
+  @spec write(Enumerable.t() | t(), Path.t(), keyword()) :: :ok | error_result()
+  def write(entries, path, opts \\ []) do
+    operation(fn ->
+      with {:ok, stream} <- writer(path, opts) do
+        entries = if match?(%__MODULE__{}, entries), do: entries.entries, else: entries
+        Enum.into(entries, stream)
+        :ok
+      end
+    end)
+  end
+
+  @spec write!(Enumerable.t() | t(), Path.t(), keyword()) :: :ok
+  def write!(entries, path, opts \\ []), do: write(entries, path, opts) |> unwrap!()
+
+  defp snapshot(source, opts, load?) do
+    operation(fn ->
+      with {:ok, stream} <- source_reader(source, opts) do
+        Archive.Stream.with_reader(stream, fn entries, ref ->
+          archive =
+            Enum.reduce(entries, new(), fn entry, acc ->
+              entry = if load?, do: Entry.read_data!(entry), else: entry
+
+              %{
+                acc
+                | entries: [Entry.detach(entry) | acc.entries],
+                  count: acc.count + 1,
+                  total_size: acc.total_size + entry.stat.size
+              }
+            end)
+
+          archive = info(archive, ref)
+          {:ok, %{archive | entries: Enum.reverse(archive.entries)}}
+        end)
+      end
+    end)
+  end
+
+  defp info(archive, ref) do
+    %{
+      archive
+      | format: archive.format || Nif.archiveFormatToAtom(Nif.archive_format(ref)),
+        compression:
+          archive.compression || Nif.archiveFilterToAtom(Nif.archive_filter_code(ref, 0)),
+        description: archive.description || Nif.archive_format_name(ref)
+    }
+  end
+
+  defp source_reader(%Archive.Stream{reader: nil}, _) do
+    {:error, ArgumentError.exception("source descriptor has no reader")}
+  end
+
+  defp source_reader(%Archive.Stream{} = stream, []), do: {:ok, stream}
+
+  defp source_reader(%Archive.Stream{}, _) do
+    {:error,
+     ArgumentError.exception("configure reader options when constructing the source descriptor")}
+  end
+
+  defp source_reader({:file, path}, opts) when is_binary(path),
+    do: typed_reader(path, opts, :file)
+
+  defp source_reader({:data, data}, opts) when is_binary(data),
+    do: typed_reader(data, opts, :data)
+
+  defp source_reader(path, opts) when is_binary(path),
+    do: reader(path, Keyword.put_new(opts, :as, :file))
+
+  defp source_reader(_, _),
+    do:
+      {:error,
+       ArgumentError.exception(
+         "expected a path, {:file, path}, {:data, binary}, or reader descriptor"
+       )}
+
+  defp typed_reader(value, opts, kind) do
+    if Keyword.get(opts, :as, kind) in [kind, :auto],
+      do: reader(value, Keyword.put(opts, :as, kind)),
+      else: {:error, ArgumentError.exception("as: option conflicts with the tagged source")}
+  end
+
+  defp operation(fun) do
+    fun.()
+  rescue
+    e in [Archive.Error, ErlangError, ArgumentError, File.Error, NimbleOptions.ValidationError] ->
+      {:error, e}
+  end
+
   defimpl Inspect do
     import Inspect.Algebra
 
@@ -290,7 +331,7 @@ defmodule Archive do
           concat(["##{struct_name}", format_str, "<", color("initialized", :yellow, opts), ">"])
 
         true ->
-          summary = summarize_archive(entries)
+          summary = summarize_archive(s.entries)
 
           header =
             concat([
@@ -315,6 +356,17 @@ defmodule Archive do
             ">"
           ])
       end
+    end
+
+    defp summarize_archive(entries) when is_list(entries) do
+      Enum.reduce(entries, %{total_entries: 0, total_size: 0, total_loaded: 0}, fn entry, acc ->
+        %{
+          acc
+          | total_entries: acc.total_entries + 1,
+            total_size: acc.total_size + (entry.stat.size || 0),
+            total_loaded: acc.total_loaded + if(entry.data, do: 1, else: 0)
+        }
+      end)
     end
 
     defp summarize_archive(entries) when is_map(entries) do

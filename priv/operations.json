@@ -1,0 +1,2708 @@
+[
+  {
+    "name": "listReadableFormats",
+    "index": 0,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "listReadableFilters",
+    "index": 1,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "listWritableFormats",
+    "index": 2,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "listWritableFilters",
+    "index": 3,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_read_new",
+    "index": 4,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_write_new",
+    "index": 5,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_read_disk_new",
+    "index": 6,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_write_disk_new",
+    "index": 7,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_match_new",
+    "index": 8,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_entry_new",
+    "index": 9,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_entry_new2",
+    "index": 10,
+    "arity": 1,
+    "signature": "a: beam.term"
+  },
+  {
+    "name": "archive_entry_clone",
+    "index": 11,
+    "arity": 1,
+    "signature": "e: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_clear",
+    "index": 12,
+    "arity": 1,
+    "signature": "e: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_free",
+    "index": 13,
+    "arity": 1,
+    "signature": "e: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_free",
+    "index": 14,
+    "arity": 1,
+    "signature": "a: beam.term"
+  },
+  {
+    "name": "archive_read_free",
+    "index": 15,
+    "arity": 1,
+    "signature": "a: beam.term"
+  },
+  {
+    "name": "archive_write_free",
+    "index": 16,
+    "arity": 1,
+    "signature": "a: beam.term"
+  },
+  {
+    "name": "archive_match_free",
+    "index": 17,
+    "arity": 1,
+    "signature": "a: beam.term"
+  },
+  {
+    "name": "archive_read_finish",
+    "index": 18,
+    "arity": 1,
+    "signature": "a: beam.term"
+  },
+  {
+    "name": "archive_write_finish",
+    "index": 19,
+    "arity": 1,
+    "signature": "a: beam.term"
+  },
+  {
+    "name": "archive_read_refresh",
+    "index": 20,
+    "arity": 1,
+    "signature": "a: beam.term"
+  },
+  {
+    "name": "archive_write_refresh",
+    "index": 21,
+    "arity": 1,
+    "signature": "a: beam.term"
+  },
+  {
+    "name": "archive_read_open_memory",
+    "index": 22,
+    "arity": 2,
+    "signature": "a: beam.term, data: []const u8"
+  },
+  {
+    "name": "archive_read_open_memory2",
+    "index": 23,
+    "arity": 3,
+    "signature": "a: beam.term, data: []const u8, read_size: usize"
+  },
+  {
+    "name": "archive_write_open_memory",
+    "index": 24,
+    "arity": 2,
+    "signature": "a: beam.term, capacity: usize"
+  },
+  {
+    "name": "archive_write_memory",
+    "index": 25,
+    "arity": 1,
+    "signature": "a: beam.term"
+  },
+  {
+    "name": "archive_read_next_header",
+    "index": 26,
+    "arity": 2,
+    "signature": "a: beam.term, e: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_read_next_header2",
+    "index": 27,
+    "arity": 2,
+    "signature": "a: beam.term, e: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_read_data",
+    "index": 28,
+    "arity": 2,
+    "signature": "a: beam.term, size: usize"
+  },
+  {
+    "name": "archive_read_data_block",
+    "index": 29,
+    "arity": 1,
+    "signature": "a: beam.term"
+  },
+  {
+    "name": "archive_write_data",
+    "index": 30,
+    "arity": 2,
+    "signature": "a: beam.term, data: []const u8"
+  },
+  {
+    "name": "archive_write_data_block",
+    "index": 31,
+    "arity": 3,
+    "signature": "a: beam.term, data: []const u8, offset: i64"
+  },
+  {
+    "name": "archive_seek_data",
+    "index": 32,
+    "arity": 3,
+    "signature": "a: beam.term, offset: i64, whence: c_int"
+  },
+  {
+    "name": "archive_read_extract2",
+    "index": 33,
+    "arity": 3,
+    "signature": "a: beam.term, e: ArchiveEntryResource, dest: beam.term"
+  },
+  {
+    "name": "archive_set_error",
+    "index": 34,
+    "arity": 3,
+    "signature": "a: beam.term, code: c_int, message: []const u8"
+  },
+  {
+    "name": "archive_entry_fflags",
+    "index": 35,
+    "arity": 1,
+    "signature": "e: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_mac_metadata",
+    "index": 36,
+    "arity": 1,
+    "signature": "e: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_copy_mac_metadata",
+    "index": 37,
+    "arity": 2,
+    "signature": "e: ArchiveEntryResource, data: []const u8"
+  },
+  {
+    "name": "archive_entry_digest",
+    "index": 38,
+    "arity": 2,
+    "signature": "e: ArchiveEntryResource, kind: c_int"
+  },
+  {
+    "name": "archive_entry_set_digest",
+    "index": 39,
+    "arity": 3,
+    "signature": "e: ArchiveEntryResource, kind: c_int, data: []const u8"
+  },
+  {
+    "name": "archive_entry_xattr_add_entry",
+    "index": 40,
+    "arity": 3,
+    "signature": "e: ArchiveEntryResource, name: []const u8, data: []const u8"
+  },
+  {
+    "name": "archive_entry_xattr_next",
+    "index": 41,
+    "arity": 1,
+    "signature": "e: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_sparse_next",
+    "index": 42,
+    "arity": 1,
+    "signature": "e: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_acl_next",
+    "index": 43,
+    "arity": 2,
+    "signature": "e: ArchiveEntryResource, want: c_int"
+  },
+  {
+    "name": "archive_entry_acl_to_text",
+    "index": 44,
+    "arity": 2,
+    "signature": "e: ArchiveEntryResource, flags: c_int"
+  },
+  {
+    "name": "archive_entry_acl_to_text_w",
+    "index": 45,
+    "arity": 2,
+    "signature": "e: ArchiveEntryResource, flags: c_int"
+  },
+  {
+    "name": "archive_match_path_unmatched_inclusions_next",
+    "index": 46,
+    "arity": 1,
+    "signature": "a: beam.term"
+  },
+  {
+    "name": "archive_match_path_unmatched_inclusions_next_w",
+    "index": 47,
+    "arity": 1,
+    "signature": "a: beam.term"
+  },
+  {
+    "name": "archive_read_disk_entry_from_file",
+    "index": 48,
+    "arity": 3,
+    "signature": "a: beam.term, e: ArchiveEntryResource, fd: c_int"
+  },
+  {
+    "name": "archive_read_disk_set_matching",
+    "index": 49,
+    "arity": 2,
+    "signature": "a: beam.term, matching: beam.term"
+  },
+  {
+    "name": "getExtractInfo",
+    "index": 50,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "extractFlagToInt",
+    "index": 51,
+    "arity": 1,
+    "signature": "f: ExtractFlag"
+  },
+  {
+    "name": "archiveFilterToInt",
+    "index": 52,
+    "arity": 1,
+    "signature": "f: ArchiveFilter"
+  },
+  {
+    "name": "archiveFormatToInt",
+    "index": 53,
+    "arity": 1,
+    "signature": "f: ArchiveFormat"
+  },
+  {
+    "name": "archiveFilterToAtom",
+    "index": 54,
+    "arity": 1,
+    "signature": "code: c_int"
+  },
+  {
+    "name": "archiveFormatToAtom",
+    "index": 55,
+    "arity": 1,
+    "signature": "code: c_int"
+  },
+  {
+    "name": "isSubFormatOf",
+    "index": 56,
+    "arity": 2,
+    "signature": "self: ArchiveFormat, parent: ArchiveFormat"
+  },
+  {
+    "name": "fileKinds",
+    "index": 57,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_entry_copy_stat",
+    "index": 58,
+    "arity": 2,
+    "signature": "e: ArchiveEntryResource, stat: Stat"
+  },
+  {
+    "name": "archive_entry_stat",
+    "index": 59,
+    "arity": 1,
+    "signature": "e: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_read_generation",
+    "index": 60,
+    "arity": 1,
+    "signature": "a: beam.term"
+  },
+  {
+    "name": "archive_entry_linkresolver_new",
+    "index": 61,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_entry_linkresolver_free",
+    "index": 62,
+    "arity": 1,
+    "signature": "r: ArchiveLinkResource"
+  },
+  {
+    "name": "archive_entry_linkresolver_set_strategy",
+    "index": 63,
+    "arity": 2,
+    "signature": "r: ArchiveLinkResource, format: c_int"
+  },
+  {
+    "name": "archive_entry_linkify",
+    "index": 64,
+    "arity": 2,
+    "signature": "r: ArchiveLinkResource, e: ?ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_partial_links",
+    "index": 65,
+    "arity": 1,
+    "signature": "r: ArchiveLinkResource"
+  },
+  {
+    "name": "archive_read_open_filenames",
+    "index": 66,
+    "arity": 3,
+    "signature": "a: beam.term, filenames: []const beam.term, block_size: usize"
+  },
+  {
+    "name": "archive_read_open_filenames_w",
+    "index": 67,
+    "arity": 3,
+    "signature": "a: beam.term, filenames: []const beam.term, block_size: usize"
+  },
+  {
+    "name": "archive_utility_string_sort",
+    "index": 68,
+    "arity": 1,
+    "signature": "values: []const beam.term"
+  },
+  {
+    "name": "archive_read_support_filter_program_signature",
+    "index": 69,
+    "arity": 3,
+    "signature": "a: beam.term, command: []const u8, signature: []const u8"
+  },
+  {
+    "name": "archive_read_support_compression_program_signature",
+    "index": 70,
+    "arity": 3,
+    "signature": "a: beam.term, command: []const u8, signature: []const u8"
+  },
+  {
+    "name": "archive_read_append_filter_program_signature",
+    "index": 71,
+    "arity": 3,
+    "signature": "a: beam.term, command: []const u8, signature: []const u8"
+  },
+  {
+    "name": "canonical_path",
+    "index": 72,
+    "arity": 1,
+    "signature": "path: []const u8"
+  },
+  {
+    "name": "archive_entry_copy_fflags_text_len",
+    "index": 73,
+    "arity": 2,
+    "signature": "e: ArchiveEntryResource, text: []const u8"
+  },
+  {
+    "name": "archive_bzlib_version",
+    "index": 74,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_clear_error",
+    "index": 75,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_cng_version",
+    "index": 76,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_commoncrypto_version",
+    "index": 77,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_compression",
+    "index": 78,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_compression_name",
+    "index": 79,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_copy_error",
+    "index": 80,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: beam.term"
+  },
+  {
+    "name": "archive_entry_acl_add_entry",
+    "index": 81,
+    "arity": 6,
+    "signature": "a0: ArchiveEntryResource, a1: c_int, a2: c_int, a3: c_int, a4: c_int, a5: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_acl_add_entry_w",
+    "index": 82,
+    "arity": 6,
+    "signature": "a0: ArchiveEntryResource, a1: c_int, a2: c_int, a3: c_int, a4: c_int, a5: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_acl_clear",
+    "index": 83,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_acl_count",
+    "index": 84,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: c_int"
+  },
+  {
+    "name": "archive_entry_acl_from_text",
+    "index": 85,
+    "arity": 3,
+    "signature": "a0: ArchiveEntryResource, a1: []const u8, a2: c_int"
+  },
+  {
+    "name": "archive_entry_acl_from_text_w",
+    "index": 86,
+    "arity": 3,
+    "signature": "a0: ArchiveEntryResource, a1: []const u8, a2: c_int"
+  },
+  {
+    "name": "archive_entry_acl_reset",
+    "index": 87,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: c_int"
+  },
+  {
+    "name": "archive_entry_acl_text",
+    "index": 88,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: c_int"
+  },
+  {
+    "name": "archive_entry_acl_text_w",
+    "index": 89,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: c_int"
+  },
+  {
+    "name": "archive_entry_acl_types",
+    "index": 90,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_atime",
+    "index": 91,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_atime_is_set",
+    "index": 92,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_atime_nsec",
+    "index": 93,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_birthtime",
+    "index": 94,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_birthtime_is_set",
+    "index": 95,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_birthtime_nsec",
+    "index": 96,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_copy_fflags_text",
+    "index": 97,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: []const u8"
+  },
+  {
+    "name": "archive_entry_copy_fflags_text_w",
+    "index": 98,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: []const u8"
+  },
+  {
+    "name": "archive_entry_copy_gname",
+    "index": 99,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_copy_gname_w",
+    "index": 100,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_copy_hardlink",
+    "index": 101,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_copy_hardlink_w",
+    "index": 102,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_copy_link",
+    "index": 103,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_copy_link_w",
+    "index": 104,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_copy_pathname",
+    "index": 105,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_copy_pathname_w",
+    "index": 106,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_copy_sourcepath",
+    "index": 107,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_copy_sourcepath_w",
+    "index": 108,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_copy_symlink",
+    "index": 109,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_copy_symlink_w",
+    "index": 110,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_copy_uname",
+    "index": 111,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_copy_uname_w",
+    "index": 112,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_ctime",
+    "index": 113,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_ctime_is_set",
+    "index": 114,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_ctime_nsec",
+    "index": 115,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_dev",
+    "index": 116,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_dev_is_set",
+    "index": 117,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_devmajor",
+    "index": 118,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_devminor",
+    "index": 119,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_fflags_text",
+    "index": 120,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_filetype",
+    "index": 121,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_filetype_is_set",
+    "index": 122,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_gid",
+    "index": 123,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_gid_is_set",
+    "index": 124,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_gname",
+    "index": 125,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_gname_utf8",
+    "index": 126,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_gname_w",
+    "index": 127,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_hardlink",
+    "index": 128,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_hardlink_is_set",
+    "index": 129,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_hardlink_utf8",
+    "index": 130,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_hardlink_w",
+    "index": 131,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_ino",
+    "index": 132,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_ino64",
+    "index": 133,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_ino_is_set",
+    "index": 134,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_is_data_encrypted",
+    "index": 135,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_is_encrypted",
+    "index": 136,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_is_metadata_encrypted",
+    "index": 137,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_mode",
+    "index": 138,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_mtime",
+    "index": 139,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_mtime_is_set",
+    "index": 140,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_mtime_nsec",
+    "index": 141,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_nlink",
+    "index": 142,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_pathname",
+    "index": 143,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_pathname_utf8",
+    "index": 144,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_pathname_w",
+    "index": 145,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_perm",
+    "index": 146,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_perm_is_set",
+    "index": 147,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_rdev",
+    "index": 148,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_rdev_is_set",
+    "index": 149,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_rdevmajor",
+    "index": 150,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_rdevminor",
+    "index": 151,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_set_atime",
+    "index": 152,
+    "arity": 3,
+    "signature": "a0: ArchiveEntryResource, a1: i64, a2: c_long"
+  },
+  {
+    "name": "archive_entry_set_birthtime",
+    "index": 153,
+    "arity": 3,
+    "signature": "a0: ArchiveEntryResource, a1: i64, a2: c_long"
+  },
+  {
+    "name": "archive_entry_set_ctime",
+    "index": 154,
+    "arity": 3,
+    "signature": "a0: ArchiveEntryResource, a1: i64, a2: c_long"
+  },
+  {
+    "name": "archive_entry_set_dev",
+    "index": 155,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: c.dev_t"
+  },
+  {
+    "name": "archive_entry_set_devmajor",
+    "index": 156,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: c.dev_t"
+  },
+  {
+    "name": "archive_entry_set_devminor",
+    "index": 157,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: c.dev_t"
+  },
+  {
+    "name": "archive_entry_set_fflags",
+    "index": 158,
+    "arity": 3,
+    "signature": "a0: ArchiveEntryResource, a1: c_ulong, a2: c_ulong"
+  },
+  {
+    "name": "archive_entry_set_filetype",
+    "index": 159,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: c_uint"
+  },
+  {
+    "name": "archive_entry_set_gid",
+    "index": 160,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: i64"
+  },
+  {
+    "name": "archive_entry_set_gname",
+    "index": 161,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_set_gname_utf8",
+    "index": 162,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_set_hardlink",
+    "index": 163,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_set_hardlink_utf8",
+    "index": 164,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_set_ino",
+    "index": 165,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: i64"
+  },
+  {
+    "name": "archive_entry_set_ino64",
+    "index": 166,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: i64"
+  },
+  {
+    "name": "archive_entry_set_is_data_encrypted",
+    "index": 167,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: u8"
+  },
+  {
+    "name": "archive_entry_set_is_metadata_encrypted",
+    "index": 168,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: u8"
+  },
+  {
+    "name": "archive_entry_set_link",
+    "index": 169,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_set_link_to_hardlink",
+    "index": 170,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_set_link_to_symlink",
+    "index": 171,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_set_link_utf8",
+    "index": 172,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_set_mode",
+    "index": 173,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: c.mode_t"
+  },
+  {
+    "name": "archive_entry_set_mtime",
+    "index": 174,
+    "arity": 3,
+    "signature": "a0: ArchiveEntryResource, a1: i64, a2: c_long"
+  },
+  {
+    "name": "archive_entry_set_nlink",
+    "index": 175,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: c_uint"
+  },
+  {
+    "name": "archive_entry_set_pathname",
+    "index": 176,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_set_pathname_utf8",
+    "index": 177,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_set_perm",
+    "index": 178,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: c.mode_t"
+  },
+  {
+    "name": "archive_entry_set_rdev",
+    "index": 179,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: c.dev_t"
+  },
+  {
+    "name": "archive_entry_set_rdevmajor",
+    "index": 180,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: c.dev_t"
+  },
+  {
+    "name": "archive_entry_set_rdevminor",
+    "index": 181,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: c.dev_t"
+  },
+  {
+    "name": "archive_entry_set_size",
+    "index": 182,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: i64"
+  },
+  {
+    "name": "archive_entry_set_symlink",
+    "index": 183,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_set_symlink_type",
+    "index": 184,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: c_int"
+  },
+  {
+    "name": "archive_entry_set_symlink_utf8",
+    "index": 185,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_set_uid",
+    "index": 186,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: i64"
+  },
+  {
+    "name": "archive_entry_set_uname",
+    "index": 187,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_set_uname_utf8",
+    "index": 188,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_size",
+    "index": 189,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_size_is_set",
+    "index": 190,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_sourcepath",
+    "index": 191,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_sourcepath_w",
+    "index": 192,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_sparse_add_entry",
+    "index": 193,
+    "arity": 3,
+    "signature": "a0: ArchiveEntryResource, a1: i64, a2: i64"
+  },
+  {
+    "name": "archive_entry_sparse_clear",
+    "index": 194,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_sparse_count",
+    "index": 195,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_sparse_reset",
+    "index": 196,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_strmode",
+    "index": 197,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_symlink",
+    "index": 198,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_symlink_type",
+    "index": 199,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_symlink_utf8",
+    "index": 200,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_symlink_w",
+    "index": 201,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_uid",
+    "index": 202,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_uid_is_set",
+    "index": 203,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_uname",
+    "index": 204,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_uname_utf8",
+    "index": 205,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_uname_w",
+    "index": 206,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_unset_atime",
+    "index": 207,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_unset_birthtime",
+    "index": 208,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_unset_ctime",
+    "index": 209,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_unset_mtime",
+    "index": 210,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_unset_size",
+    "index": 211,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_update_gname_utf8",
+    "index": 212,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_update_hardlink_utf8",
+    "index": 213,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_update_link_utf8",
+    "index": 214,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_update_pathname_utf8",
+    "index": 215,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_update_symlink_utf8",
+    "index": 216,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_update_uname_utf8",
+    "index": 217,
+    "arity": 2,
+    "signature": "a0: ArchiveEntryResource, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_entry_xattr_clear",
+    "index": 218,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_xattr_count",
+    "index": 219,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_entry_xattr_reset",
+    "index": 220,
+    "arity": 1,
+    "signature": "a0: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_errno",
+    "index": 221,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_error_string",
+    "index": 222,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_file_count",
+    "index": 223,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_filter_bytes",
+    "index": 224,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: c_int"
+  },
+  {
+    "name": "archive_filter_code",
+    "index": 225,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: c_int"
+  },
+  {
+    "name": "archive_filter_count",
+    "index": 226,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_filter_name",
+    "index": 227,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: c_int"
+  },
+  {
+    "name": "archive_format",
+    "index": 228,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_format_name",
+    "index": 229,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_libacl_version",
+    "index": 230,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_libattr_version",
+    "index": 231,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_libbsdxml_version",
+    "index": 232,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_libexpat_version",
+    "index": 233,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_libiconv_version",
+    "index": 234,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_liblz4_version",
+    "index": 235,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_liblzma_version",
+    "index": 236,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_liblzo2_version",
+    "index": 237,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_libmd_version",
+    "index": 238,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_libpcre2_version",
+    "index": 239,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_libpcre_version",
+    "index": 240,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_librichacl_version",
+    "index": 241,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_libxml2_version",
+    "index": 242,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_libzstd_version",
+    "index": 243,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_match_exclude_entry",
+    "index": 244,
+    "arity": 3,
+    "signature": "a0: beam.term, a1: c_int, a2: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_match_exclude_pattern",
+    "index": 245,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: []const u8"
+  },
+  {
+    "name": "archive_match_exclude_pattern_from_file",
+    "index": 246,
+    "arity": 3,
+    "signature": "a0: beam.term, a1: []const u8, a2: c_int"
+  },
+  {
+    "name": "archive_match_exclude_pattern_from_file_w",
+    "index": 247,
+    "arity": 3,
+    "signature": "a0: beam.term, a1: []const u8, a2: c_int"
+  },
+  {
+    "name": "archive_match_exclude_pattern_w",
+    "index": 248,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: []const u8"
+  },
+  {
+    "name": "archive_match_excluded",
+    "index": 249,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_match_include_date",
+    "index": 250,
+    "arity": 3,
+    "signature": "a0: beam.term, a1: c_int, a2: []const u8"
+  },
+  {
+    "name": "archive_match_include_date_w",
+    "index": 251,
+    "arity": 3,
+    "signature": "a0: beam.term, a1: c_int, a2: []const u8"
+  },
+  {
+    "name": "archive_match_include_file_time",
+    "index": 252,
+    "arity": 3,
+    "signature": "a0: beam.term, a1: c_int, a2: []const u8"
+  },
+  {
+    "name": "archive_match_include_file_time_w",
+    "index": 253,
+    "arity": 3,
+    "signature": "a0: beam.term, a1: c_int, a2: []const u8"
+  },
+  {
+    "name": "archive_match_include_gid",
+    "index": 254,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: i64"
+  },
+  {
+    "name": "archive_match_include_gname",
+    "index": 255,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: []const u8"
+  },
+  {
+    "name": "archive_match_include_gname_w",
+    "index": 256,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: []const u8"
+  },
+  {
+    "name": "archive_match_include_pattern",
+    "index": 257,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: []const u8"
+  },
+  {
+    "name": "archive_match_include_pattern_from_file",
+    "index": 258,
+    "arity": 3,
+    "signature": "a0: beam.term, a1: []const u8, a2: c_int"
+  },
+  {
+    "name": "archive_match_include_pattern_from_file_w",
+    "index": 259,
+    "arity": 3,
+    "signature": "a0: beam.term, a1: []const u8, a2: c_int"
+  },
+  {
+    "name": "archive_match_include_pattern_w",
+    "index": 260,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: []const u8"
+  },
+  {
+    "name": "archive_match_include_time",
+    "index": 261,
+    "arity": 4,
+    "signature": "a0: beam.term, a1: c_int, a2: i64, a3: c_long"
+  },
+  {
+    "name": "archive_match_include_uid",
+    "index": 262,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: i64"
+  },
+  {
+    "name": "archive_match_include_uname",
+    "index": 263,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: []const u8"
+  },
+  {
+    "name": "archive_match_include_uname_w",
+    "index": 264,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: []const u8"
+  },
+  {
+    "name": "archive_match_owner_excluded",
+    "index": 265,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_match_path_excluded",
+    "index": 266,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_match_path_unmatched_inclusions",
+    "index": 267,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_match_set_inclusion_recursion",
+    "index": 268,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: c_int"
+  },
+  {
+    "name": "archive_match_time_excluded",
+    "index": 269,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_mbedtls_version",
+    "index": 270,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_nettle_version",
+    "index": 271,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_openssl_version",
+    "index": 272,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_parse_date",
+    "index": 273,
+    "arity": 2,
+    "signature": "a0: i64, a1: []const u8"
+  },
+  {
+    "name": "archive_position_compressed",
+    "index": 274,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_position_uncompressed",
+    "index": 275,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_add_passphrase",
+    "index": 276,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: []const u8"
+  },
+  {
+    "name": "archive_read_append_filter",
+    "index": 277,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: c_int"
+  },
+  {
+    "name": "archive_read_append_filter_program",
+    "index": 278,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: []const u8"
+  },
+  {
+    "name": "archive_read_close",
+    "index": 279,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_data_into_fd",
+    "index": 280,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: c_int"
+  },
+  {
+    "name": "archive_read_data_skip",
+    "index": 281,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_disk_can_descend",
+    "index": 282,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_disk_current_filesystem",
+    "index": 283,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_disk_current_filesystem_is_remote",
+    "index": 284,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_disk_current_filesystem_is_synthetic",
+    "index": 285,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_disk_descend",
+    "index": 286,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_disk_gname",
+    "index": 287,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: i64"
+  },
+  {
+    "name": "archive_read_disk_open",
+    "index": 288,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: []const u8"
+  },
+  {
+    "name": "archive_read_disk_open_w",
+    "index": 289,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: []const u8"
+  },
+  {
+    "name": "archive_read_disk_set_atime_restored",
+    "index": 290,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_disk_set_behavior",
+    "index": 291,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: c_int"
+  },
+  {
+    "name": "archive_read_disk_set_standard_lookup",
+    "index": 292,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_disk_set_symlink_hybrid",
+    "index": 293,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_disk_set_symlink_logical",
+    "index": 294,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_disk_set_symlink_physical",
+    "index": 295,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_disk_uname",
+    "index": 296,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: i64"
+  },
+  {
+    "name": "archive_read_extract",
+    "index": 297,
+    "arity": 3,
+    "signature": "a0: beam.term, a1: ArchiveEntryResource, a2: c_int"
+  },
+  {
+    "name": "archive_read_extract_set_skip_file",
+    "index": 298,
+    "arity": 3,
+    "signature": "a0: beam.term, a1: i64, a2: i64"
+  },
+  {
+    "name": "archive_read_format_capabilities",
+    "index": 299,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_has_encrypted_entries",
+    "index": 300,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_header_position",
+    "index": 301,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_open1",
+    "index": 302,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_open_fd",
+    "index": 303,
+    "arity": 3,
+    "signature": "a0: beam.term, a1: c_int, a2: usize"
+  },
+  {
+    "name": "archive_read_open_file",
+    "index": 304,
+    "arity": 3,
+    "signature": "a0: beam.term, a1: ?[]const u8, a2: usize"
+  },
+  {
+    "name": "archive_read_open_filename",
+    "index": 305,
+    "arity": 3,
+    "signature": "a0: beam.term, a1: ?[]const u8, a2: usize"
+  },
+  {
+    "name": "archive_read_open_filename_w",
+    "index": 306,
+    "arity": 3,
+    "signature": "a0: beam.term, a1: ?[]const u8, a2: usize"
+  },
+  {
+    "name": "archive_read_set_filter_option",
+    "index": 307,
+    "arity": 4,
+    "signature": "a0: beam.term, a1: ?[]const u8, a2: ?[]const u8, a3: ?[]const u8"
+  },
+  {
+    "name": "archive_read_set_format",
+    "index": 308,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: c_int"
+  },
+  {
+    "name": "archive_read_set_format_option",
+    "index": 309,
+    "arity": 4,
+    "signature": "a0: beam.term, a1: ?[]const u8, a2: ?[]const u8, a3: ?[]const u8"
+  },
+  {
+    "name": "archive_read_set_option",
+    "index": 310,
+    "arity": 4,
+    "signature": "a0: beam.term, a1: ?[]const u8, a2: ?[]const u8, a3: ?[]const u8"
+  },
+  {
+    "name": "archive_read_set_options",
+    "index": 311,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: []const u8"
+  },
+  {
+    "name": "archive_read_support_compression_all",
+    "index": 312,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_compression_bzip2",
+    "index": 313,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_compression_compress",
+    "index": 314,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_compression_gzip",
+    "index": 315,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_compression_lzip",
+    "index": 316,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_compression_lzma",
+    "index": 317,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_compression_none",
+    "index": 318,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_compression_program",
+    "index": 319,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: []const u8"
+  },
+  {
+    "name": "archive_read_support_compression_rpm",
+    "index": 320,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_compression_uu",
+    "index": 321,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_compression_xz",
+    "index": 322,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_filter_all",
+    "index": 323,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_filter_by_code",
+    "index": 324,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: c_int"
+  },
+  {
+    "name": "archive_read_support_filter_bzip2",
+    "index": 325,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_filter_compress",
+    "index": 326,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_filter_grzip",
+    "index": 327,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_filter_gzip",
+    "index": 328,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_filter_lrzip",
+    "index": 329,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_filter_lz4",
+    "index": 330,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_filter_lzip",
+    "index": 331,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_filter_lzma",
+    "index": 332,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_filter_lzop",
+    "index": 333,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_filter_none",
+    "index": 334,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_filter_program",
+    "index": 335,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: []const u8"
+  },
+  {
+    "name": "archive_read_support_filter_rpm",
+    "index": 336,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_filter_uu",
+    "index": 337,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_filter_xz",
+    "index": 338,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_filter_zstd",
+    "index": 339,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_format_7zip",
+    "index": 340,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_format_all",
+    "index": 341,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_format_ar",
+    "index": 342,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_format_by_code",
+    "index": 343,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: c_int"
+  },
+  {
+    "name": "archive_read_support_format_cab",
+    "index": 344,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_format_cpio",
+    "index": 345,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_format_empty",
+    "index": 346,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_format_gnutar",
+    "index": 347,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_format_iso9660",
+    "index": 348,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_format_lha",
+    "index": 349,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_format_mtree",
+    "index": 350,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_format_rar",
+    "index": 351,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_format_rar5",
+    "index": 352,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_format_raw",
+    "index": 353,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_format_tar",
+    "index": 354,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_format_warc",
+    "index": 355,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_format_xar",
+    "index": 356,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_format_zip",
+    "index": 357,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_format_zip_seekable",
+    "index": 358,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_read_support_format_zip_streamable",
+    "index": 359,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_version_details",
+    "index": 360,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_version_number",
+    "index": 361,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_version_string",
+    "index": 362,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_wincrypt_version",
+    "index": 363,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_write_add_filter",
+    "index": 364,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: c_int"
+  },
+  {
+    "name": "archive_write_add_filter_b64encode",
+    "index": 365,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_add_filter_by_name",
+    "index": 366,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: []const u8"
+  },
+  {
+    "name": "archive_write_add_filter_bzip2",
+    "index": 367,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_add_filter_compress",
+    "index": 368,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_add_filter_grzip",
+    "index": 369,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_add_filter_gzip",
+    "index": 370,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_add_filter_lrzip",
+    "index": 371,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_add_filter_lz4",
+    "index": 372,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_add_filter_lzip",
+    "index": 373,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_add_filter_lzma",
+    "index": 374,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_add_filter_lzop",
+    "index": 375,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_add_filter_none",
+    "index": 376,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_add_filter_program",
+    "index": 377,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: []const u8"
+  },
+  {
+    "name": "archive_write_add_filter_uuencode",
+    "index": 378,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_add_filter_xz",
+    "index": 379,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_add_filter_zstd",
+    "index": 380,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_close",
+    "index": 381,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_disk_gid",
+    "index": 382,
+    "arity": 3,
+    "signature": "a0: beam.term, a1: []const u8, a2: i64"
+  },
+  {
+    "name": "archive_write_disk_set_options",
+    "index": 383,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: c_int"
+  },
+  {
+    "name": "archive_write_disk_set_skip_file",
+    "index": 384,
+    "arity": 3,
+    "signature": "a0: beam.term, a1: i64, a2: i64"
+  },
+  {
+    "name": "archive_write_disk_set_standard_lookup",
+    "index": 385,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_disk_uid",
+    "index": 386,
+    "arity": 3,
+    "signature": "a0: beam.term, a1: []const u8, a2: i64"
+  },
+  {
+    "name": "archive_write_fail",
+    "index": 387,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_finish_entry",
+    "index": 388,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_get_bytes_in_last_block",
+    "index": 389,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_get_bytes_per_block",
+    "index": 390,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_header",
+    "index": 391,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: ArchiveEntryResource"
+  },
+  {
+    "name": "archive_write_open_fd",
+    "index": 392,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: c_int"
+  },
+  {
+    "name": "archive_write_open_file",
+    "index": 393,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_write_open_filename",
+    "index": 394,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_write_open_filename_w",
+    "index": 395,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: ?[]const u8"
+  },
+  {
+    "name": "archive_write_set_bytes_in_last_block",
+    "index": 396,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: c_int"
+  },
+  {
+    "name": "archive_write_set_bytes_per_block",
+    "index": 397,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: c_int"
+  },
+  {
+    "name": "archive_write_set_compression_bzip2",
+    "index": 398,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_compression_compress",
+    "index": 399,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_compression_gzip",
+    "index": 400,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_compression_lzip",
+    "index": 401,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_compression_lzma",
+    "index": 402,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_compression_none",
+    "index": 403,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_compression_program",
+    "index": 404,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: []const u8"
+  },
+  {
+    "name": "archive_write_set_compression_xz",
+    "index": 405,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_filter_option",
+    "index": 406,
+    "arity": 4,
+    "signature": "a0: beam.term, a1: ?[]const u8, a2: ?[]const u8, a3: ?[]const u8"
+  },
+  {
+    "name": "archive_write_set_format",
+    "index": 407,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: c_int"
+  },
+  {
+    "name": "archive_write_set_format_7zip",
+    "index": 408,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_format_ar_bsd",
+    "index": 409,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_format_ar_svr4",
+    "index": 410,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_format_by_name",
+    "index": 411,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: []const u8"
+  },
+  {
+    "name": "archive_write_set_format_cpio",
+    "index": 412,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_format_cpio_bin",
+    "index": 413,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_format_cpio_newc",
+    "index": 414,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_format_cpio_odc",
+    "index": 415,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_format_cpio_pwb",
+    "index": 416,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_format_filter_by_ext",
+    "index": 417,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: []const u8"
+  },
+  {
+    "name": "archive_write_set_format_filter_by_ext_def",
+    "index": 418,
+    "arity": 3,
+    "signature": "a0: beam.term, a1: []const u8, a2: []const u8"
+  },
+  {
+    "name": "archive_write_set_format_gnutar",
+    "index": 419,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_format_iso9660",
+    "index": 420,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_format_mtree",
+    "index": 421,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_format_mtree_classic",
+    "index": 422,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_format_option",
+    "index": 423,
+    "arity": 4,
+    "signature": "a0: beam.term, a1: ?[]const u8, a2: ?[]const u8, a3: ?[]const u8"
+  },
+  {
+    "name": "archive_write_set_format_pax",
+    "index": 424,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_format_pax_restricted",
+    "index": 425,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_format_raw",
+    "index": 426,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_format_shar",
+    "index": 427,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_format_shar_dump",
+    "index": 428,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_format_ustar",
+    "index": 429,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_format_v7tar",
+    "index": 430,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_format_warc",
+    "index": 431,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_format_xar",
+    "index": 432,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_format_zip",
+    "index": 433,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_set_option",
+    "index": 434,
+    "arity": 4,
+    "signature": "a0: beam.term, a1: ?[]const u8, a2: ?[]const u8, a3: ?[]const u8"
+  },
+  {
+    "name": "archive_write_set_options",
+    "index": 435,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: []const u8"
+  },
+  {
+    "name": "archive_write_set_passphrase",
+    "index": 436,
+    "arity": 2,
+    "signature": "a0: beam.term, a1: []const u8"
+  },
+  {
+    "name": "archive_write_set_skip_file",
+    "index": 437,
+    "arity": 3,
+    "signature": "a0: beam.term, a1: i64, a2: i64"
+  },
+  {
+    "name": "archive_write_zip_set_compression_bzip2",
+    "index": 438,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_zip_set_compression_deflate",
+    "index": 439,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_zip_set_compression_lzma",
+    "index": 440,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_zip_set_compression_store",
+    "index": 441,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_zip_set_compression_xz",
+    "index": 442,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_write_zip_set_compression_zstd",
+    "index": 443,
+    "arity": 1,
+    "signature": "a0: beam.term"
+  },
+  {
+    "name": "archive_zlib_version",
+    "index": 444,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "constants",
+    "index": 445,
+    "arity": 0,
+    "signature": ""
+  },
+  {
+    "name": "archive_read_data_current",
+    "index": 446,
+    "arity": 3,
+    "signature": "reader, generation, chunk_size"
+  },
+  {
+    "name": "archive_resource_probe",
+    "index": 447,
+    "arity": 1,
+    "signature": "diagnostic ownership probe; does not retain the native allocation"
+  },
+  {
+    "name": "archive_resource_stats",
+    "index": 448,
+    "arity": 1,
+    "signature": "diagnostic ownership probe; does not retain the native allocation"
+  },
+  {
+    "name": "archive_entry_read_generation",
+    "index": 449,
+    "arity": 1,
+    "signature": "entry; cursor generation captured atomically when reading the header"
+  },
+  {
+    "name": "archive_read_extract_current",
+    "index": 450,
+    "arity": 4,
+    "signature": "reader, generation, entry, flags; atomic cursor validation and extraction"
+  }
+]

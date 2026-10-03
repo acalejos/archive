@@ -1,0 +1,328 @@
+{
+  "ArchiveFilter": {
+    "none": "ARCHIVE_FILTER_NONE",
+    "gzip": "ARCHIVE_FILTER_GZIP",
+    "bzip2": "ARCHIVE_FILTER_BZIP2",
+    "compress": "ARCHIVE_FILTER_COMPRESS",
+    "program": "ARCHIVE_FILTER_PROGRAM",
+    "lzma": "ARCHIVE_FILTER_LZMA",
+    "xz": "ARCHIVE_FILTER_XZ",
+    "uu": "ARCHIVE_FILTER_UU",
+    "rpm": "ARCHIVE_FILTER_RPM",
+    "lzip": "ARCHIVE_FILTER_LZIP",
+    "lrzip": "ARCHIVE_FILTER_LRZIP",
+    "lzop": "ARCHIVE_FILTER_LZOP",
+    "grzip": "ARCHIVE_FILTER_GRZIP",
+    "lz4": "ARCHIVE_FILTER_LZ4",
+    "zstd": "ARCHIVE_FILTER_ZSTD"
+  },
+  "ArchiveFormat": {
+    "cpio": "ARCHIVE_FORMAT_CPIO",
+    "cpio_posix": "ARCHIVE_FORMAT_CPIO_POSIX",
+    "cpio_bin_le": "ARCHIVE_FORMAT_CPIO_BIN_LE",
+    "cpio_bin_be": "ARCHIVE_FORMAT_CPIO_BIN_BE",
+    "cpio_svr4_nocrc": "ARCHIVE_FORMAT_CPIO_SVR4_NOCRC",
+    "cpio_svr4_crc": "ARCHIVE_FORMAT_CPIO_SVR4_CRC",
+    "cpio_afio_large": "ARCHIVE_FORMAT_CPIO_AFIO_LARGE",
+    "cpio_pwb": "ARCHIVE_FORMAT_CPIO_PWB",
+    "shar": "ARCHIVE_FORMAT_SHAR",
+    "shar_base": "ARCHIVE_FORMAT_SHAR_BASE",
+    "shar_dump": "ARCHIVE_FORMAT_SHAR_DUMP",
+    "tar": "ARCHIVE_FORMAT_TAR",
+    "tar_ustar": "ARCHIVE_FORMAT_TAR_USTAR",
+    "tar_pax_interchange": "ARCHIVE_FORMAT_TAR_PAX_INTERCHANGE",
+    "tar_pax_restricted": "ARCHIVE_FORMAT_TAR_PAX_RESTRICTED",
+    "tar_gnutar": "ARCHIVE_FORMAT_TAR_GNUTAR",
+    "iso9660": "ARCHIVE_FORMAT_ISO9660",
+    "iso9660_rockridge": "ARCHIVE_FORMAT_ISO9660_ROCKRIDGE",
+    "zip": "ARCHIVE_FORMAT_ZIP",
+    "empty": "ARCHIVE_FORMAT_EMPTY",
+    "ar": "ARCHIVE_FORMAT_AR",
+    "ar_gnu": "ARCHIVE_FORMAT_AR_GNU",
+    "ar_bsd": "ARCHIVE_FORMAT_AR_BSD",
+    "mtree": "ARCHIVE_FORMAT_MTREE",
+    "raw": "ARCHIVE_FORMAT_RAW",
+    "xar": "ARCHIVE_FORMAT_XAR",
+    "lha": "ARCHIVE_FORMAT_LHA",
+    "cab": "ARCHIVE_FORMAT_CAB",
+    "rar": "ARCHIVE_FORMAT_RAR",
+    "sevenz": "ARCHIVE_FORMAT_7ZIP",
+    "warc": "ARCHIVE_FORMAT_WARC",
+    "rar_v5": "ARCHIVE_FORMAT_RAR_V5"
+  },
+  "ExtractFlag": {
+    "owner": "ARCHIVE_EXTRACT_OWNER",
+    "perm": "ARCHIVE_EXTRACT_PERM",
+    "time": "ARCHIVE_EXTRACT_TIME",
+    "no_overwrite": "ARCHIVE_EXTRACT_NO_OVERWRITE",
+    "unlink": "ARCHIVE_EXTRACT_UNLINK",
+    "acl": "ARCHIVE_EXTRACT_ACL",
+    "fflags": "ARCHIVE_EXTRACT_FFLAGS",
+    "xattr": "ARCHIVE_EXTRACT_XATTR",
+    "secure_symlinks": "ARCHIVE_EXTRACT_SECURE_SYMLINKS",
+    "secure_nodotdot": "ARCHIVE_EXTRACT_SECURE_NODOTDOT",
+    "no_autodir": "ARCHIVE_EXTRACT_NO_AUTODIR",
+    "no_overwrite_newer": "ARCHIVE_EXTRACT_NO_OVERWRITE_NEWER",
+    "sparse": "ARCHIVE_EXTRACT_SPARSE",
+    "mac_metadata": "ARCHIVE_EXTRACT_MAC_METADATA",
+    "no_hfs_compression": "ARCHIVE_EXTRACT_NO_HFS_COMPRESSION",
+    "hfs_compression_forced": "ARCHIVE_EXTRACT_HFS_COMPRESSION_FORCED",
+    "secure_noabsolutepaths": "ARCHIVE_EXTRACT_SECURE_NOABSOLUTEPATHS",
+    "clear_nochange_fflags": "ARCHIVE_EXTRACT_CLEAR_NOCHANGE_FFLAGS",
+    "safe_writes": "ARCHIVE_EXTRACT_SAFE_WRITES"
+  },
+  "archive_format_info": [
+    [
+      "cpio",
+      "ReadWrite"
+    ],
+    [
+      "cpio_posix",
+      "Write"
+    ],
+    [
+      "cpio_bin_le",
+      "Write"
+    ],
+    [
+      "cpio_bin_be",
+      "Write"
+    ],
+    [
+      "cpio_svr4_nocrc",
+      "Write"
+    ],
+    [
+      "cpio_pwb",
+      "Write"
+    ],
+    [
+      "shar",
+      "Write"
+    ],
+    [
+      "shar_base",
+      "Write"
+    ],
+    [
+      "shar_dump",
+      "Write"
+    ],
+    [
+      "tar",
+      "ReadWrite"
+    ],
+    [
+      "tar_ustar",
+      "Write"
+    ],
+    [
+      "tar_pax_interchange",
+      "Write"
+    ],
+    [
+      "tar_pax_restricted",
+      "Write"
+    ],
+    [
+      "tar_gnutar",
+      "Write"
+    ],
+    [
+      "iso9660",
+      "ReadWrite"
+    ],
+    [
+      "zip",
+      "ReadWrite"
+    ],
+    [
+      "empty",
+      "Read"
+    ],
+    [
+      "ar",
+      "ReadWrite"
+    ],
+    [
+      "ar_gnu",
+      "Write"
+    ],
+    [
+      "ar_bsd",
+      "Write"
+    ],
+    [
+      "mtree",
+      "ReadWrite"
+    ],
+    [
+      "raw",
+      "ReadWrite"
+    ],
+    [
+      "xar",
+      "ReadWrite"
+    ],
+    [
+      "lha",
+      "Read"
+    ],
+    [
+      "cab",
+      "Read"
+    ],
+    [
+      "rar",
+      "Read"
+    ],
+    [
+      "sevenz",
+      "ReadWrite"
+    ],
+    [
+      "warc",
+      "ReadWrite"
+    ],
+    [
+      "rar_v5",
+      "Read"
+    ]
+  ],
+  "archive_filter_info": [
+    [
+      "none",
+      "ReadWrite"
+    ],
+    [
+      "gzip",
+      "ReadWrite"
+    ],
+    [
+      "bzip2",
+      "ReadWrite"
+    ],
+    [
+      "compress",
+      "ReadWrite"
+    ],
+    [
+      "lzma",
+      "ReadWrite"
+    ],
+    [
+      "xz",
+      "ReadWrite"
+    ],
+    [
+      "uu",
+      "ReadWrite"
+    ],
+    [
+      "lzip",
+      "ReadWrite"
+    ],
+    [
+      "lrzip",
+      "ReadWrite"
+    ],
+    [
+      "lzop",
+      "ReadWrite"
+    ],
+    [
+      "grzip",
+      "ReadWrite"
+    ],
+    [
+      "lz4",
+      "ReadWrite"
+    ],
+    [
+      "zstd",
+      "ReadWrite"
+    ],
+    [
+      "rpm",
+      "Read"
+    ]
+  ],
+  "extract_docs": [
+    [
+      "owner",
+      "Do not try to set owner/group."
+    ],
+    [
+      "perm",
+      "Do obey umask, do not restore SUID/SGID/SVTX bits."
+    ],
+    [
+      "time",
+      "Do not restore mtime/atime."
+    ],
+    [
+      "no_overwrite",
+      "Replace existing files."
+    ],
+    [
+      "unlink",
+      "Try create first, unlink only if create fails with EEXIST."
+    ],
+    [
+      "acl",
+      "Do not restore ACLs."
+    ],
+    [
+      "fflags",
+      "Do not restore fflags."
+    ],
+    [
+      "xattr",
+      "Do not restore xattrs."
+    ],
+    [
+      "secure_symlinks",
+      "Do not try to guard against extracts redirected by symlinks. Note: With ARCHIVE_EXTRACT_UNLINK, will remove any intermediate symlink."
+    ],
+    [
+      "secure_nodotdot",
+      "Do not reject entries with '..' as path elements."
+    ],
+    [
+      "no_autodir",
+      "Create parent directories as needed."
+    ],
+    [
+      "no_overwrite_newer",
+      "Overwrite files, even if one on disk is newer."
+    ],
+    [
+      "sparse",
+      "Detect blocks of 0 and write holes instead."
+    ],
+    [
+      "mac_metadata",
+      "Do not restore Mac extended metadata. This has no effect except on Mac OS."
+    ],
+    [
+      "no_hfs_compression",
+      "Use HFS+ compression if it was compressed. This has no effect except on Mac OS v10.6 or later."
+    ],
+    [
+      "hfs_compression_forced",
+      "Do not use HFS+ compression if it was not compressed. This has no effect except on Mac OS v10.6 or later."
+    ],
+    [
+      "secure_noabsolutepaths",
+      "Do not reject entries with absolute paths"
+    ],
+    [
+      "clear_nochange_fflags",
+      "Do not clear no-change flags when unlinking object"
+    ],
+    [
+      "safe_writes",
+      "Do not extract atomically (using rename)"
+    ]
+  ]
+}

@@ -1,0 +1,21 @@
+[package]
+name = "archive_nif"
+version = "0.5.0"
+edition = "2021"
+rust-version = "1.91"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+rustler = { version = "=0.38.0", default-features = false, features = ["derive", "nif_version_2_17"] }
+libc = "0.2"
+openssl-sys = { version = "0.9", features = ["vendored"] }
+
+[build-dependencies]
+bindgen = "0.72"
+cc = "1"
+
+[features]
+default = ["nif_version_2_17"]
+nif_version_2_17 = ["rustler/nif_version_2_17"]

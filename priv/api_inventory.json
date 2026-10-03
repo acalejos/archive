@@ -1,0 +1,1765 @@
+{
+  "archive_bzlib_version": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_clear_error": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_cng_version": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_commoncrypto_version": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_compression": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_compression_name": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_copy_error": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_acl": {
+    "kind": "excluded",
+    "reason": "Requires ownership adapter: return struct archive_acl *"
+  },
+  "archive_entry_acl_add_entry": {
+    "arity": 6,
+    "kind": "generated"
+  },
+  "archive_entry_acl_add_entry_w": {
+    "arity": 6,
+    "kind": "generated"
+  },
+  "archive_entry_acl_clear": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_acl_count": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_acl_from_text": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_entry_acl_from_text_w": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_entry_acl_next": {
+    "kind": "adapted"
+  },
+  "archive_entry_acl_reset": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_acl_text": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_acl_text_w": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_acl_to_text": {
+    "kind": "adapted"
+  },
+  "archive_entry_acl_to_text_w": {
+    "kind": "adapted"
+  },
+  "archive_entry_acl_types": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_atime": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_atime_is_set": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_atime_nsec": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_birthtime": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_birthtime_is_set": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_birthtime_nsec": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_clear": {
+    "kind": "adapted"
+  },
+  "archive_entry_clone": {
+    "kind": "adapted"
+  },
+  "archive_entry_copy_bhfi": {
+    "kind": "excluded",
+    "reason": "Foreign FILE* or Windows handle; use filename/fd APIs."
+  },
+  "archive_entry_copy_fflags_text": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_copy_fflags_text_len": {
+    "kind": "adapted"
+  },
+  "archive_entry_copy_fflags_text_w": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_copy_gname": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_copy_gname_w": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_copy_hardlink": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_copy_hardlink_w": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_copy_link": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_copy_link_w": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_copy_mac_metadata": {
+    "kind": "adapted"
+  },
+  "archive_entry_copy_pathname": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_copy_pathname_w": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_copy_sourcepath": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_copy_sourcepath_w": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_copy_stat": {
+    "kind": "adapted"
+  },
+  "archive_entry_copy_symlink": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_copy_symlink_w": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_copy_uname": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_copy_uname_w": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_ctime": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_ctime_is_set": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_ctime_nsec": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_dev": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_dev_is_set": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_devmajor": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_devminor": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_digest": {
+    "kind": "adapted"
+  },
+  "archive_entry_fflags": {
+    "kind": "adapted"
+  },
+  "archive_entry_fflags_text": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_filetype": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_filetype_is_set": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_free": {
+    "kind": "adapted"
+  },
+  "archive_entry_gid": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_gid_is_set": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_gname": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_gname_utf8": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_gname_w": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_hardlink": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_hardlink_is_set": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_hardlink_utf8": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_hardlink_w": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_ino": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_ino64": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_ino_is_set": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_is_data_encrypted": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_is_encrypted": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_is_metadata_encrypted": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_linkify": {
+    "kind": "adapted"
+  },
+  "archive_entry_linkresolver_free": {
+    "kind": "adapted"
+  },
+  "archive_entry_linkresolver_new": {
+    "kind": "adapted"
+  },
+  "archive_entry_linkresolver_set_strategy": {
+    "kind": "adapted"
+  },
+  "archive_entry_mac_metadata": {
+    "kind": "adapted"
+  },
+  "archive_entry_mode": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_mtime": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_mtime_is_set": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_mtime_nsec": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_new": {
+    "kind": "adapted"
+  },
+  "archive_entry_new2": {
+    "kind": "adapted"
+  },
+  "archive_entry_nlink": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_partial_links": {
+    "kind": "adapted"
+  },
+  "archive_entry_pathname": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_pathname_utf8": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_pathname_w": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_perm": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_perm_is_set": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_rdev": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_rdev_is_set": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_rdevmajor": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_rdevminor": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_set_atime": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_entry_set_birthtime": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_entry_set_ctime": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_entry_set_dev": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_devmajor": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_devminor": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_digest": {
+    "kind": "adapted"
+  },
+  "archive_entry_set_fflags": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_entry_set_filetype": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_gid": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_gname": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_gname_utf8": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_hardlink": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_hardlink_utf8": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_ino": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_ino64": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_is_data_encrypted": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_is_metadata_encrypted": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_link": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_link_to_hardlink": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_set_link_to_symlink": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_set_link_utf8": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_mode": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_mtime": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_entry_set_nlink": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_pathname": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_pathname_utf8": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_perm": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_rdev": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_rdevmajor": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_rdevminor": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_size": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_symlink": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_symlink_type": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_symlink_utf8": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_uid": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_uname": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_set_uname_utf8": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_size": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_size_is_set": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_sourcepath": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_sourcepath_w": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_sparse_add_entry": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_entry_sparse_clear": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_sparse_count": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_sparse_next": {
+    "kind": "adapted"
+  },
+  "archive_entry_sparse_reset": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_stat": {
+    "kind": "adapted"
+  },
+  "archive_entry_strmode": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_symlink": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_symlink_type": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_symlink_utf8": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_symlink_w": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_uid": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_uid_is_set": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_uname": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_uname_utf8": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_uname_w": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_unset_atime": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_unset_birthtime": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_unset_ctime": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_unset_mtime": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_unset_size": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_update_gname_utf8": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_update_hardlink_utf8": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_update_link_utf8": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_update_pathname_utf8": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_update_symlink_utf8": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_update_uname_utf8": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_entry_xattr_add_entry": {
+    "kind": "adapted"
+  },
+  "archive_entry_xattr_clear": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_xattr_count": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_entry_xattr_next": {
+    "kind": "adapted"
+  },
+  "archive_entry_xattr_reset": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_errno": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_error_string": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_file_count": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_filter_bytes": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_filter_code": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_filter_count": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_filter_name": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_format": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_format_name": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_free": {
+    "kind": "adapted"
+  },
+  "archive_libacl_version": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_libattr_version": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_libbsdxml_version": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_libexpat_version": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_libiconv_version": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_liblz4_version": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_liblzma_version": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_liblzo2_version": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_libmd_version": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_libpcre2_version": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_libpcre_version": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_librichacl_version": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_libxml2_version": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_libzstd_version": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_match_exclude_entry": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_match_exclude_pattern": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_match_exclude_pattern_from_file": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_match_exclude_pattern_from_file_w": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_match_exclude_pattern_w": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_match_excluded": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_match_free": {
+    "kind": "adapted"
+  },
+  "archive_match_include_date": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_match_include_date_w": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_match_include_file_time": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_match_include_file_time_w": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_match_include_gid": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_match_include_gname": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_match_include_gname_w": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_match_include_pattern": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_match_include_pattern_from_file": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_match_include_pattern_from_file_w": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_match_include_pattern_w": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_match_include_time": {
+    "arity": 4,
+    "kind": "generated"
+  },
+  "archive_match_include_uid": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_match_include_uname": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_match_include_uname_w": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_match_new": {
+    "kind": "adapted"
+  },
+  "archive_match_owner_excluded": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_match_path_excluded": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_match_path_unmatched_inclusions": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_match_path_unmatched_inclusions_next": {
+    "kind": "adapted"
+  },
+  "archive_match_path_unmatched_inclusions_next_w": {
+    "kind": "adapted"
+  },
+  "archive_match_set_inclusion_recursion": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_match_time_excluded": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_mbedtls_version": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_nettle_version": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_openssl_version": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_parse_date": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_position_compressed": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_position_uncompressed": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_add_callback_data": {
+    "kind": "excluded",
+    "reason": "C callback or opaque client pointer; use managed streams or canned I/O."
+  },
+  "archive_read_add_passphrase": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_read_append_callback_data": {
+    "kind": "excluded",
+    "reason": "C callback or opaque client pointer; use managed streams or canned I/O."
+  },
+  "archive_read_append_filter": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_read_append_filter_program": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_read_append_filter_program_signature": {
+    "kind": "adapted"
+  },
+  "archive_read_close": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_data": {
+    "kind": "adapted"
+  },
+  "archive_read_data_block": {
+    "kind": "adapted"
+  },
+  "archive_read_data_into_fd": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_read_data_skip": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_disk_can_descend": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_disk_current_filesystem": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_disk_current_filesystem_is_remote": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_disk_current_filesystem_is_synthetic": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_disk_descend": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_disk_entry_from_file": {
+    "kind": "adapted"
+  },
+  "archive_read_disk_gname": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_read_disk_new": {
+    "kind": "adapted"
+  },
+  "archive_read_disk_open": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_read_disk_open_w": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_read_disk_set_atime_restored": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_disk_set_behavior": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_read_disk_set_gname_lookup": {
+    "kind": "excluded",
+    "reason": "C callback or opaque client pointer; use managed streams or canned I/O."
+  },
+  "archive_read_disk_set_matching": {
+    "kind": "adapted"
+  },
+  "archive_read_disk_set_metadata_filter_callback": {
+    "kind": "excluded",
+    "reason": "C callback or opaque client pointer; use managed streams or canned I/O."
+  },
+  "archive_read_disk_set_standard_lookup": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_disk_set_symlink_hybrid": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_disk_set_symlink_logical": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_disk_set_symlink_physical": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_disk_set_uname_lookup": {
+    "kind": "excluded",
+    "reason": "C callback or opaque client pointer; use managed streams or canned I/O."
+  },
+  "archive_read_disk_uname": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_read_extract": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_read_extract2": {
+    "kind": "adapted"
+  },
+  "archive_read_extract_set_progress_callback": {
+    "kind": "excluded",
+    "reason": "C callback or opaque client pointer; use managed streams or canned I/O."
+  },
+  "archive_read_extract_set_skip_file": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_read_finish": {
+    "kind": "adapted"
+  },
+  "archive_read_format_capabilities": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_free": {
+    "kind": "adapted"
+  },
+  "archive_read_has_encrypted_entries": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_header_position": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_new": {
+    "kind": "adapted"
+  },
+  "archive_read_next_header": {
+    "kind": "adapted"
+  },
+  "archive_read_next_header2": {
+    "kind": "adapted"
+  },
+  "archive_read_open": {
+    "kind": "excluded",
+    "reason": "C callback or opaque client pointer; use managed streams or canned I/O."
+  },
+  "archive_read_open1": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_open2": {
+    "kind": "excluded",
+    "reason": "C callback or opaque client pointer; use managed streams or canned I/O."
+  },
+  "archive_read_open_FILE": {
+    "kind": "excluded",
+    "reason": "Foreign FILE* or Windows handle; use filename/fd APIs."
+  },
+  "archive_read_open_fd": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_read_open_file": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_read_open_filename": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_read_open_filename_w": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_read_open_filenames": {
+    "kind": "adapted"
+  },
+  "archive_read_open_filenames_w": {
+    "kind": "adapted"
+  },
+  "archive_read_open_memory": {
+    "kind": "adapted"
+  },
+  "archive_read_open_memory2": {
+    "kind": "adapted"
+  },
+  "archive_read_prepend_callback_data": {
+    "kind": "excluded",
+    "reason": "C callback or opaque client pointer; use managed streams or canned I/O."
+  },
+  "archive_read_set_callback_data": {
+    "kind": "excluded",
+    "reason": "C callback or opaque client pointer; use managed streams or canned I/O."
+  },
+  "archive_read_set_callback_data2": {
+    "kind": "excluded",
+    "reason": "C callback or opaque client pointer; use managed streams or canned I/O."
+  },
+  "archive_read_set_close_callback": {
+    "kind": "excluded",
+    "reason": "C callback or opaque client pointer; use managed streams or canned I/O."
+  },
+  "archive_read_set_filter_option": {
+    "arity": 4,
+    "kind": "generated"
+  },
+  "archive_read_set_format": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_read_set_format_option": {
+    "arity": 4,
+    "kind": "generated"
+  },
+  "archive_read_set_open_callback": {
+    "kind": "excluded",
+    "reason": "C callback or opaque client pointer; use managed streams or canned I/O."
+  },
+  "archive_read_set_option": {
+    "arity": 4,
+    "kind": "generated"
+  },
+  "archive_read_set_options": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_read_set_passphrase_callback": {
+    "kind": "excluded",
+    "reason": "C callback or opaque client pointer; use managed streams or canned I/O."
+  },
+  "archive_read_set_read_callback": {
+    "kind": "excluded",
+    "reason": "C callback or opaque client pointer; use managed streams or canned I/O."
+  },
+  "archive_read_set_seek_callback": {
+    "kind": "excluded",
+    "reason": "C callback or opaque client pointer; use managed streams or canned I/O."
+  },
+  "archive_read_set_skip_callback": {
+    "kind": "excluded",
+    "reason": "C callback or opaque client pointer; use managed streams or canned I/O."
+  },
+  "archive_read_set_switch_callback": {
+    "kind": "excluded",
+    "reason": "C callback or opaque client pointer; use managed streams or canned I/O."
+  },
+  "archive_read_support_compression_all": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_compression_bzip2": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_compression_compress": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_compression_gzip": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_compression_lzip": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_compression_lzma": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_compression_none": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_compression_program": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_read_support_compression_program_signature": {
+    "kind": "adapted"
+  },
+  "archive_read_support_compression_rpm": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_compression_uu": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_compression_xz": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_filter_all": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_filter_by_code": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_read_support_filter_bzip2": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_filter_compress": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_filter_grzip": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_filter_gzip": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_filter_lrzip": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_filter_lz4": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_filter_lzip": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_filter_lzma": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_filter_lzop": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_filter_none": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_filter_program": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_read_support_filter_program_signature": {
+    "kind": "adapted"
+  },
+  "archive_read_support_filter_rpm": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_filter_uu": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_filter_xz": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_filter_zstd": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_format_7zip": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_format_all": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_format_ar": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_format_by_code": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_read_support_format_cab": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_format_cpio": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_format_empty": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_format_gnutar": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_format_iso9660": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_format_lha": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_format_mtree": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_format_rar": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_format_rar5": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_format_raw": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_format_tar": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_format_warc": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_format_xar": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_format_zip": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_format_zip_seekable": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_read_support_format_zip_streamable": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_seek_data": {
+    "kind": "adapted"
+  },
+  "archive_set_error": {
+    "kind": "adapted"
+  },
+  "archive_utility_string_sort": {
+    "kind": "adapted"
+  },
+  "archive_version_details": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_version_number": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_version_string": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_wincrypt_version": {
+    "arity": 0,
+    "kind": "generated"
+  },
+  "archive_write_add_filter": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_write_add_filter_b64encode": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_add_filter_by_name": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_write_add_filter_bzip2": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_add_filter_compress": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_add_filter_grzip": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_add_filter_gzip": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_add_filter_lrzip": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_add_filter_lz4": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_add_filter_lzip": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_add_filter_lzma": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_add_filter_lzop": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_add_filter_none": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_add_filter_program": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_write_add_filter_uuencode": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_add_filter_xz": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_add_filter_zstd": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_close": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_data": {
+    "kind": "adapted"
+  },
+  "archive_write_data_block": {
+    "kind": "adapted"
+  },
+  "archive_write_disk_gid": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_write_disk_new": {
+    "kind": "adapted"
+  },
+  "archive_write_disk_set_group_lookup": {
+    "kind": "excluded",
+    "reason": "C callback or opaque client pointer; use managed streams or canned I/O."
+  },
+  "archive_write_disk_set_options": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_write_disk_set_skip_file": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_write_disk_set_standard_lookup": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_disk_set_user_lookup": {
+    "kind": "excluded",
+    "reason": "C callback or opaque client pointer; use managed streams or canned I/O."
+  },
+  "archive_write_disk_uid": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_write_fail": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_finish": {
+    "kind": "adapted"
+  },
+  "archive_write_finish_entry": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_free": {
+    "kind": "adapted"
+  },
+  "archive_write_get_bytes_in_last_block": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_get_bytes_per_block": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_header": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_write_new": {
+    "kind": "adapted"
+  },
+  "archive_write_open": {
+    "kind": "excluded",
+    "reason": "C callback or opaque client pointer; use managed streams or canned I/O."
+  },
+  "archive_write_open2": {
+    "kind": "excluded",
+    "reason": "C callback or opaque client pointer; use managed streams or canned I/O."
+  },
+  "archive_write_open_FILE": {
+    "kind": "excluded",
+    "reason": "Foreign FILE* or Windows handle; use filename/fd APIs."
+  },
+  "archive_write_open_fd": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_write_open_file": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_write_open_filename": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_write_open_filename_w": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_write_open_memory": {
+    "kind": "adapted"
+  },
+  "archive_write_set_bytes_in_last_block": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_write_set_bytes_per_block": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_write_set_compression_bzip2": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_compression_compress": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_compression_gzip": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_compression_lzip": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_compression_lzma": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_compression_none": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_compression_program": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_write_set_compression_xz": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_filter_option": {
+    "arity": 4,
+    "kind": "generated"
+  },
+  "archive_write_set_format": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_write_set_format_7zip": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_format_ar_bsd": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_format_ar_svr4": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_format_by_name": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_write_set_format_cpio": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_format_cpio_bin": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_format_cpio_newc": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_format_cpio_odc": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_format_cpio_pwb": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_format_filter_by_ext": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_write_set_format_filter_by_ext_def": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_write_set_format_gnutar": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_format_iso9660": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_format_mtree": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_format_mtree_classic": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_format_option": {
+    "arity": 4,
+    "kind": "generated"
+  },
+  "archive_write_set_format_pax": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_format_pax_restricted": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_format_raw": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_format_shar": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_format_shar_dump": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_format_ustar": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_format_v7tar": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_format_warc": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_format_xar": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_format_zip": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_set_option": {
+    "arity": 4,
+    "kind": "generated"
+  },
+  "archive_write_set_options": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_write_set_passphrase": {
+    "arity": 2,
+    "kind": "generated"
+  },
+  "archive_write_set_passphrase_callback": {
+    "kind": "excluded",
+    "reason": "C callback or opaque client pointer; use managed streams or canned I/O."
+  },
+  "archive_write_set_skip_file": {
+    "arity": 3,
+    "kind": "generated"
+  },
+  "archive_write_zip_set_compression_bzip2": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_zip_set_compression_deflate": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_zip_set_compression_lzma": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_zip_set_compression_store": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_zip_set_compression_xz": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_write_zip_set_compression_zstd": {
+    "arity": 1,
+    "kind": "generated"
+  },
+  "archive_zlib_version": {
+    "arity": 0,
+    "kind": "generated"
+  }
+}
