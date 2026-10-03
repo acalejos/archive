@@ -280,6 +280,7 @@ defmodule ArchiveTest do
 
     entry = Entry.from_file(link)
     assert entry.stat.type == :symlink
+    assert Bitwise.band(entry.stat.mode, 0o170000) == 0o120000
     assert entry.symlink == reported_target
     assert entry.data == nil
     Archive.write!([entry], path)

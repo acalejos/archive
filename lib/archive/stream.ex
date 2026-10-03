@@ -167,7 +167,7 @@ defmodule Archive.Stream do
       checked(
         fn ->
           if r.as == :file,
-            do: Nif.archive_read_open_filename(r.ref, r.open, r.block_size),
+            do: Nif.archive_read_open_filename_w(r.ref, r.open, r.block_size),
             else: Nif.archive_read_open_memory(r.ref, r.open)
         end,
         r.ref
@@ -226,7 +226,7 @@ defmodule Archive.Stream do
 
     try do
       checked(
-        fn -> Nif.archive_write_open_filename(active.writer.ref, active.writer.file) end,
+        fn -> Nif.archive_write_open_filename_w(active.writer.ref, active.writer.file) end,
         active.writer.ref
       )
 
