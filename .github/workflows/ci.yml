@@ -63,6 +63,7 @@ jobs:
             ~/.cargo/registry
           key: source-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('mix.lock', 'native/archive/Cargo.lock', 'native/dependencies.json') }}-${{ github.sha }}
           restore-keys: |
+            source-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('mix.lock', 'native/archive/Cargo.lock', 'native/dependencies.json') }}-
             source-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('mix.lock', 'native/archive/Cargo.lock', 'native/dependencies.json') }}
       - run: mix deps.get
       - run: python3 scripts/generate_bindings.py --check
