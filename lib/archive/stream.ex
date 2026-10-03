@@ -233,8 +233,15 @@ defmodule Archive.Stream do
       {active,
        fn
          acc, {:cont, %Archive.Entry{} = entry} ->
-           Archive.Entry.write!(entry, acc)
-           acc
+           try do
+             Archive.Entry.write!(entry, acc)
+             acc
+           catch
+             kind, reason ->
+               Nif.safe_call(fn -> Nif.archive_write_fail(acc.writer.ref) end)
+               close(acc)
+               :erlang.raise(kind, reason, __STACKTRACE__)
+           end
 
          acc, :done ->
            try do

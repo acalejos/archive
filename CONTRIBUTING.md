@@ -64,6 +64,12 @@ under one reader lock. Independent readers do not share a global lock.
 aligned with the exact libarchive version. All dependencies compile as static,
 position-independent libraries. Binary audits reject non-system shared dependencies.
 
+The build checks that zstd and ZIP encryption remain enabled rather than accepting
+failed CMake feature probes. Linux static-library probes link pthread and dl for
+the glibc 2.28 baseline. A guarded patch to libarchive 3.8.9's filename writer
+closes its owned descriptor during free after a fatal error; normal close resets
+the descriptor to prevent a second close. Re-audit this patch on libarchive upgrades.
+
 ## Coverage and CI
 
 `mix test --cover` enforces 91% line coverage of handwritten Elixir runtime code,

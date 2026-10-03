@@ -158,10 +158,10 @@ defmodule Archive.Entry do
             ),
           else: opts[:flags]
 
-      Nif.archive_entry_set_pathname(cloned, target)
+      Nif.archive_entry_set_pathname_utf8(cloned, target)
 
-      if hardlink = Nif.archive_entry_hardlink(cloned) do
-        Nif.archive_entry_set_hardlink(cloned, extract_path!(hardlink, opts))
+      if hardlink = Nif.archive_entry_hardlink_utf8(cloned) do
+        Nif.archive_entry_set_hardlink_utf8(cloned, extract_path!(hardlink, opts))
       end
 
       action = fn ->
@@ -203,7 +203,7 @@ defmodule Archive.Entry do
     native = if metadata, do: Nif.archive_entry_clone(metadata), else: empty
 
     try do
-      Nif.archive_entry_set_pathname(native, entry.path)
+      Nif.archive_entry_set_pathname_utf8(native, entry.path)
       original = if metadata, do: Nif.archive_entry_stat(native)
       previous = if original, do: Archive.Stat.to_file_stat(original)
       converted = Archive.Stat.file_stat_to_native_map(entry.stat)
@@ -248,8 +248,8 @@ defmodule Archive.Entry do
           do: Nif.archive_entry_unset_birthtime(native)
       end
 
-      Nif.archive_entry_set_symlink(native, entry.symlink)
-      Nif.archive_entry_set_hardlink(native, entry.hardlink)
+      Nif.archive_entry_set_symlink_utf8(native, entry.symlink)
+      Nif.archive_entry_set_hardlink_utf8(native, entry.hardlink)
       ArchiveStream.checked(fn -> Nif.archive_write_header(ref, native) end, ref)
       {:ok, entry}
     after
@@ -298,7 +298,7 @@ defmodule Archive.Entry do
       reader: ref,
       entry: clone,
       generation: Nif.archive_entry_read_generation(clone),
-      path: Nif.archive_entry_pathname(clone)
+      path: Nif.archive_entry_pathname_utf8(clone)
     }
 
     {:ok,
@@ -306,8 +306,8 @@ defmodule Archive.Entry do
        entry
        | path: source.path,
          stat: Nif.archive_entry_stat(clone) |> Archive.Stat.to_file_stat(),
-         symlink: Nif.archive_entry_symlink(clone),
-         hardlink: Nif.archive_entry_hardlink(clone),
+         symlink: Nif.archive_entry_symlink_utf8(clone),
+         hardlink: Nif.archive_entry_hardlink_utf8(clone),
          source: source,
          native: clone
      }}

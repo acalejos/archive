@@ -7,7 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SCALARS = {'int','unsigned int','unsigned long','long','char','size_t','la_int64_t','la_ssize_t','time_t','__LA_TIME_T','__LA_DEV_T','__LA_MODE_T','__LA_INO_T'}
-STATUS_PREFIXES = ('archive_read_support','archive_read_set','archive_read_append','archive_read_open','archive_read_close','archive_read_data_','archive_read_extract','archive_write_set','archive_write_add','archive_write_zip','archive_write_open','archive_write_close','archive_write_finish','archive_write_fail','archive_write_disk_set','archive_read_disk_set','archive_read_disk_open','archive_read_disk_descend','archive_match_include','archive_match_exclude_','archive_match_set')
+STATUS_PREFIXES = ('archive_read_support','archive_read_set','archive_read_append','archive_read_open','archive_read_close','archive_read_data_','archive_read_extract','archive_write_set','archive_write_add','archive_write_zip','archive_write_open','archive_write_close','archive_write_finish','archive_write_disk_set','archive_read_disk_set','archive_read_disk_open','archive_read_disk_descend','archive_match_include','archive_match_exclude_','archive_match_set')
 STATUS_NAMES = {'archive_entry_acl_add_entry','archive_entry_acl_add_entry_w','archive_entry_acl_from_text','archive_entry_acl_from_text_w','archive_write_header'}
 NULLABLE = {'archive_entry_acl_add_entry','archive_entry_acl_add_entry_w','archive_read_open_filename','archive_read_open_filename_w','archive_read_open_file','archive_write_open_filename','archive_write_open_filename_w','archive_write_open_file'}
 
