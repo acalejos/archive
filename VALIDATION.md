@@ -1,7 +1,8 @@
 # Validation of the unreleased 0.5.0 Rust migration
 
-Local checks on 2026-10-03 used Apple Silicon macOS, Elixir 1.19.5, OTP 28.3.1,
-Rust 1.95.0, Rustler 0.38.0, RustlerPrecompiled 0.10.0, and bundled libarchive 3.8.9.
+Validation on 2026-10-03 combined local Apple Silicon checks with the hosted
+matrix below. The local toolchain was Elixir 1.19.5, OTP 28.3.1, Rust 1.95.0,
+Rustler 0.38.0, RustlerPrecompiled 0.10.0, and bundled libarchive 3.8.9.
 
 | Check | Result |
 | --- | --- |
