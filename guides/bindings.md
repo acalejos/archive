@@ -17,6 +17,8 @@ Every declaration is classified; platform-specific declarations remain visible.
   counters, timestamps, and sizes return integers. Predicates retain C's nonzero
   success convention (some return bitmasks).
   `archive_entry_update_*_utf8` also retains C's integer success convention.
+  `archive_write_fail` marks the writer failed and returns C's positive internal
+  state value; it does not return an archive status code. Free the handle afterward.
 * String getters return binaries or `nil`. String inputs reject embedded NULs;
   `nil` represents a C null string where the upstream function accepts it.
   Do not pass `nil` to upstream functions requiring a string.

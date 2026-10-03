@@ -3368,10 +3368,7 @@ pub(super) unsafe fn invoke<'a>(
             if args.len() != 1 {
                 return Err(Error::BadArg);
             }
-            status(ffi::archive_write_fail(
-                ctx.archive(args[0], Some(Kind::Writer))?,
-            ))?;
-            ok(ctx.env)
+            Ok(ffi::archive_write_fail(ctx.archive(args[0], Some(Kind::Writer))?).encode(ctx.env))
         }
         388 => {
             if args.len() != 1 {

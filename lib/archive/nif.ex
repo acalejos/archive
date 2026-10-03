@@ -13,6 +13,16 @@ defmodule Archive.Nif do
   libarchive warnings as successful operations and logs their diagnostic.
   """
   require Logger
+
+  for file <- [
+        "scripts/build_native.py",
+        "native/dependencies.json",
+        "vendor/libarchive/archive.h",
+        "vendor/libarchive/archive_entry.h"
+      ] do
+    @external_resource Path.expand("../../" <> file, __DIR__)
+  end
+
   version = Mix.Project.config()[:version]
 
   use RustlerPrecompiled,

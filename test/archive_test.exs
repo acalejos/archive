@@ -205,6 +205,38 @@ defmodule ArchiveTest do
     assert {:error, %Archive.Error{reason: :SizeMismatch}} = Archive.write([entry], path)
   end
 
+  test "collector errors close the writer while the collector remains referenced", %{path: path} do
+    alias Archive.Nif, as: N
+    {active, collect} = Collectable.into(Archive.writer!(path))
+    probe = N.archive_resource_probe(active.writer.ref)
+    entry = Entry.from_binary("wrong-size", "body")
+    entry = %{entry | stat: %{entry.stat | size: 5}}
+
+    assert_raise Archive.Error, fn -> collect.(active, {:cont, entry}) end
+    assert N.archive_resource_stats(probe).freed == 1
+    assert :ok = collect.(active, :halt)
+    assert N.archive_resource_stats(probe).freed == 1
+    assert :ok = File.rm(path)
+  end
+
+  test "freeing a failed native writer releases its filename descriptor", %{path: path} do
+    alias Archive.Nif, as: N
+    writer = N.archive_write_new()
+    N.archive_write_set_format_pax(writer)
+    N.archive_write_open_filename(writer, path)
+
+    open? = fn ->
+      File.ls!("/proc/self/fd")
+      |> Enum.any?(fn fd -> File.read_link("/proc/self/fd/" <> fd) == {:ok, path} end)
+    end
+
+    if File.dir?("/proc/self/fd"), do: assert(open?.())
+    assert N.archive_write_fail(writer) > 0
+    N.archive_write_free(writer)
+    if File.dir?("/proc/self/fd"), do: refute(open?.())
+    assert :ok = File.rm(path)
+  end
+
   test "retains symlink and hardlink metadata", %{path: path} do
     plain = Entry.from_binary("plain", "hello")
 
@@ -238,14 +270,15 @@ defmodule ArchiveTest do
     file = Path.join(dir, "original")
     link = Path.join(dir, "link")
     File.write!(file, "body")
-    File.ln_s!("original", link)
+    target = if match?({:win32, _}, :os.type()), do: file, else: "original"
+    File.ln_s!(target, link)
     entry = Entry.from_file(link)
     assert entry.stat.type == :symlink
-    assert entry.symlink == "original"
+    assert entry.symlink == target
     assert entry.data == nil
     Archive.write!([entry], path)
     [result] = Enum.to_list(Archive.reader!(path))
-    assert result.symlink == "original"
+    assert result.symlink == target
     assert result.stat.type == :symlink
   end
 

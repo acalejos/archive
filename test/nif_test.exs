@@ -304,7 +304,14 @@ defmodule Archive.NifTest do
     r = N.archive_read_disk_new()
     e = N.archive_entry_new()
     N.archive_read_disk_set_symlink_physical(r)
-    N.archive_read_disk_set_standard_lookup(r)
+
+    if match?({:win32, _}, :os.type()) do
+      assert {:error, _} = N.safe_call(fn -> N.archive_read_disk_set_standard_lookup(r) end)
+      assert N.get_error_string(r) =~ "not available on Windows"
+    else
+      assert :ok = N.archive_read_disk_set_standard_lookup(r)
+    end
+
     N.archive_read_disk_open(r, path)
     N.archive_read_next_header(r, e)
     assert N.archive_entry_size(e) == 5

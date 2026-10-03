@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -13,6 +14,35 @@ import tarfile
 import urllib.request
 
 ROOT = Path(__file__).resolve().parent.parent
+
+def verify_libarchive_config(build):
+    enabled = set(re.findall(r'^#define (\w+) 1$', (build / 'config.h').read_text(), re.MULTILINE))
+    required = {'HAVE_ZSTD_H', 'HAVE_LIBZSTD', 'HAVE_ZSTD_compressStream'}
+    if sys.platform.startswith('linux'):
+        required |= {'HAVE_LIBCRYPTO', 'HAVE_OPENSSL_EVP_H', 'HAVE_PKCS5_PBKDF2_HMAC_SHA1'}
+    elif os.name == 'nt':
+        required.add('HAVE_BCRYPT_H')
+    missing = required - enabled
+    if missing:
+        raise RuntimeError(f'libarchive disabled required bundled capabilities: {sorted(missing)}')
+
+def patch_filename_cleanup(source):
+    # Upstream skips writer close in FATAL state (including archive_write_fail).
+    # Its filename free callback otherwise frees the metadata but leaks the fd.
+    # Close in both callbacks, resetting the fd to prevent a second close.
+    path = source / 'libarchive/archive_write_open_filename.c'
+    text = path.read_text()
+    replacements = [
+        ('\tif (mine->fd >= 0)\n\t\tclose(mine->fd);',
+         '\tif (mine->fd >= 0) {\n\t\tclose(mine->fd);\n\t\tmine->fd = -1;\n\t}'),
+        ('\tarchive_mstring_clean(&mine->filename);\n\tfree(mine);',
+         '\tif (mine->fd >= 0)\n\t\tclose(mine->fd);\n\tarchive_mstring_clean(&mine->filename);\n\tfree(mine);'),
+    ]
+    for before, after in replacements:
+        if after in text: continue
+        if text.count(before) != 1: raise RuntimeError('libarchive filename cleanup patch no longer applies')
+        text = text.replace(before, after, 1)
+    path.write_text(text)
 
 def run(args):
     subprocess.run([str(arg) for arg in args], check=True)
@@ -63,10 +93,18 @@ def main():
       'libxml2': ['-DLIBXML2_WITH_PYTHON=OFF', '-DLIBXML2_WITH_PROGRAMS=OFF', '-DLIBXML2_WITH_TESTS=OFF', '-DLIBXML2_WITH_ICONV=OFF', '-DLIBXML2_WITH_LZMA=OFF', '-DLIBXML2_WITH_ZLIB=OFF'],
       'libarchive': ['-DENABLE_TEST=OFF', '-DENABLE_TAR=OFF', '-DENABLE_CPIO=OFF', '-DENABLE_CAT=OFF', '-DENABLE_UNZIP=OFF', '-DENABLE_LIBB2=OFF', '-DENABLE_LZO=OFF', '-DENABLE_PCREPOSIX=OFF', '-DENABLE_PCRE2POSIX=OFF', '-DENABLE_EXPAT=OFF', '-DENABLE_BSDXML=OFF', '-DENABLE_NETTLE=OFF', '-DENABLE_MBEDTLS=OFF', '-DENABLE_MD=OFF', '-DENABLE_ACL=OFF', '-DENABLE_ICONV=ON', '-DOPENSSL_USE_STATIC_LIBS=TRUE'],
     }
+    if sys.platform.startswith('linux'):
+        # Static zstd/OpenSSL need these transitive libraries in CMake's link
+        # probes too. On glibc 2.28 they are separate from libc; omitting them
+        # silently disables compression/encryption despite finding the archives.
+        options['libarchive'].append('-DCMAKE_C_STANDARD_LIBRARIES=-lpthread -ldl')
     for name, dep in deps.items():
         stamp = out / (name + '.built')
-        config_hash = hashlib.sha256(json.dumps([dep['sha256'], common, options[name], os.environ.get('DEP_OPENSSL_ROOT')], sort_keys=True).encode()).hexdigest()
+        configuration = [dep['sha256'], common, options[name], os.environ.get('DEP_OPENSSL_ROOT')]
+        if name == 'libarchive': configuration.append(hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
+        config_hash = hashlib.sha256(json.dumps(configuration, sort_keys=True).encode()).hexdigest()
         if stamp.exists() and stamp.read_text() == config_hash:
+            if name == 'libarchive': verify_libarchive_config(out / 'build-libarchive')
             continue
         archive = cache / (name + '-' + dep['version'] + '.tar')
         if not archive.exists():
@@ -80,6 +118,7 @@ def main():
                 # Reject absolute/traversing/link entries rather than trusting a tar path.
                 package.extractall(unpack, filter='data')
         source = next(path for path in unpack.iterdir() if path.is_dir())
+        if name == 'libarchive': patch_filename_cleanup(source)
         license_dir = prefix / 'share/archive/licenses'
         license_dir.mkdir(parents=True, exist_ok=True)
         for filename in ['LICENSE', 'LICENSE.txt', 'COPYING', 'COPYING.LESSER', 'COPYING.BSD', 'Copyright']:
@@ -116,6 +155,7 @@ install(FILES bzlib.h DESTINATION include)
         if build.exists(): shutil.rmtree(build)
         run(['cmake', '-S', source / dep['cmake_subdir'], '-B', build, *common, *extra])
         if name == 'libarchive':
+            verify_libarchive_config(build)
             run(['cmake', '--build', build, '--target', 'archive_static', '--parallel', os.environ.get('NUM_JOBS', '4')])
             # Installing the upstream project would also build its shared target.
             installed = build / 'libarchive' / ('archive.lib' if os.name == 'nt' else 'libarchive.a')

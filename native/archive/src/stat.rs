@@ -121,6 +121,12 @@ pub(crate) unsafe fn copy(term: Term<'_>, e: *mut ffi::archive_entry) -> NifResu
     #[cfg(windows)]
     unsafe {
         ffi::archive_entry_set_size(e, size);
+        // MSVC stat has whole-second timestamps. libarchive retains nanoseconds.
+        ffi::archive_entry_set_atime(e, at.sec as _, at.nsec as _);
+        ffi::archive_entry_set_mtime(e, mt.sec as _, mt.nsec as _);
+        ffi::archive_entry_set_ctime(e, ct.sec as _, ct.nsec as _);
+        let bt = time(env, term, "birthtim")?;
+        ffi::archive_entry_set_birthtime(e, bt.sec as _, bt.nsec as _);
     }
     Ok(())
 }
@@ -183,9 +189,22 @@ pub(crate) unsafe fn read(e: *mut ffi::archive_entry) -> NifResult<Stat> {
     }
     #[cfg(windows)]
     {
-        out.atim.sec = s.st_atime as i64;
-        out.mtim.sec = s.st_mtime as i64;
-        out.ctim.sec = s.st_ctime as i64;
+        out.atim = Time {
+            sec: unsafe { ffi::archive_entry_atime(e) } as i64,
+            nsec: unsafe { ffi::archive_entry_atime_nsec(e) } as i64,
+        };
+        out.mtim = Time {
+            sec: unsafe { ffi::archive_entry_mtime(e) } as i64,
+            nsec: unsafe { ffi::archive_entry_mtime_nsec(e) } as i64,
+        };
+        out.ctim = Time {
+            sec: unsafe { ffi::archive_entry_ctime(e) } as i64,
+            nsec: unsafe { ffi::archive_entry_ctime_nsec(e) } as i64,
+        };
+        out.birthtim = Time {
+            sec: unsafe { ffi::archive_entry_birthtime(e) } as i64,
+            nsec: unsafe { ffi::archive_entry_birthtime_nsec(e) } as i64,
+        };
     }
     Ok(out)
 }
