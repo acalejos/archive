@@ -61,12 +61,18 @@ jobs:
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          arch: ${{ startsWith(matrix.target, 'aarch64') && 'amd64_arm64' || 'amd64' }}
+          arch: ${{ startsWith(matrix.target, 'aarch64') && 'arm64' || 'amd64' }}
       - name: Windows tools and Rust host
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          # Use an x64 build host on both Windows runners so x64 libclang works.
+          # Rust's x64 build helpers load x64 libclang; C compilation uses the
+          # runner's native MSVC host to avoid emulating every OpenSSL C file.
+          $compiler = (Get-Command cl.exe).Source
+          "CC=$compiler" >> $env:GITHUB_ENV
+          if ('${{ matrix.target }}' -eq 'aarch64-pc-windows-msvc' -and $compiler -notmatch 'HostARM64') {
+            throw "Expected native ARM64 MSVC host, got $compiler"
+          }
           choco install llvm ninja strawberryperl -y --no-progress
           "C:\Program Files\LLVM\bin" >> $env:GITHUB_PATH
           "C:\Strawberry\perl\bin" >> $env:GITHUB_PATH
@@ -80,6 +86,17 @@ jobs:
         run: |
           rustup toolchain install 1.95.0 --profile minimal
           rustup target add --toolchain 1.95.0 ${{ matrix.target }}
+      - name: Restore Windows native build cache
+        if: runner.os == 'Windows'
+        id: windows-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            native/archive/target
+            _build/native-downloads
+            ~/.cargo/registry
+          key: native-${{ matrix.target }}-${{ hashFiles('native/archive/Cargo.lock', 'native/dependencies.json') }}-${{ github.sha }}
+          restore-keys: native-${{ matrix.target }}-${{ hashFiles('native/archive/Cargo.lock', 'native/dependencies.json') }}-
       - name: Build Linux artifact in baseline container
         if: runner.os == 'Linux'
         env:
@@ -91,6 +108,15 @@ jobs:
       - name: Build native artifact
         if: runner.os != 'Linux'
         run: python scripts/build_release.py --target ${{ matrix.target }}
+      - name: Save Windows native build cache
+        if: always() && runner.os == 'Windows' && steps.windows-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            native/archive/target
+            _build/native-downloads
+            ~/.cargo/registry
+          key: ${{ steps.windows-cache.outputs.cache-primary-key }}
       - uses: actions/upload-artifact@v4
         with:
           name: nif-${{ matrix.target }}

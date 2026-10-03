@@ -57,9 +57,10 @@ jobs:
         with:
           path: |
             deps
+            native/archive/target
             _build/native-downloads
             ~/.cargo/registry
-          key: source-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('mix.lock', 'native/archive/Cargo.lock', 'native/dependencies.json') }}
+          key: source-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('mix.lock', 'native/archive/Cargo.lock', 'native/dependencies.json') }}
       - run: mix deps.get
       - run: python3 scripts/generate_bindings.py --check
       - run: cargo fmt --manifest-path native/archive/Cargo.toml --check

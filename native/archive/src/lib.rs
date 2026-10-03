@@ -176,6 +176,8 @@ fn wide(t: Term<'_>, nullable: bool) -> NifResult<Option<Vec<libc::wchar_t>>> {
 fn wptr(s: &Option<Vec<libc::wchar_t>>) -> *const libc::wchar_t {
     s.as_ref().map_or(std::ptr::null(), |s| s.as_ptr())
 }
+// wchar_t is unsigned on Linux ARM64 and signed on macOS/Linux x86-64.
+#[allow(clippy::unnecessary_cast)]
 unsafe fn wide_string<'a>(env: Env<'a>, p: *const libc::wchar_t) -> NifResult<Term<'a>> {
     if p.is_null() {
         return Ok(Option::<u8>::None.encode(env));
