@@ -22,6 +22,9 @@ Every declaration is classified; platform-specific declarations remain visible.
 * String getters return binaries or `nil`. String inputs reject embedded NULs;
   `nil` represents a C null string where the upstream function accepts it.
   Do not pass `nil` to upstream functions requiring a string.
+  On Windows, the bundled library uses UTF-8 for default byte-string conversions,
+  independently of the host C locale. Archive formats with explicit encodings
+  still use libarchive's conversion logic and `hdrcharset` options.
 * `_w` APIs convert UTF-8 binaries to/from native `wchar_t` (UTF-32 on Unix,
   UTF-16 on Windows). The Windows-only
   multi-volume wide opener reports `:UnsupportedPlatform` on Unix. The release workflow includes Windows binaries for both architectures.

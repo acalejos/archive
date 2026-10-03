@@ -21,9 +21,10 @@ the normal Windows/Visual C++ runtime.
 | Windows, MSVC | `x86_64-pc-windows-msvc` | `aarch64-pc-windows-msvc` |
 
 These are configured build targets. A release is ready only after their Actions
-jobs succeed. Linux/macOS and Windows x86-64 artifacts also run the production
-tests from isolated Hex installations. Windows ARM64 binaries receive architecture
-and dependency audits; an ARM64 BEAM runtime is required to load them.
+jobs succeed. Linux glibc and macOS artifacts on both architectures, plus Windows
+x86-64, also run the production tests from isolated Hex installations. The two
+musl targets and Windows ARM64 currently receive build, architecture, and
+dependency audits. An ARM64 BEAM runtime is required to load the Windows ARM64 NIF.
 
 Binaries bundle libarchive 3.8.9, zlib 1.3.2, bzip2 1.0.8, XZ 5.8.4, LZ4 1.10.0,
 Zstandard 1.5.7, libxml2 2.15.4, and the OpenSSL version in Cargo.lock. C sources

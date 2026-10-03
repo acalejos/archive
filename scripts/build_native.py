@@ -54,6 +54,39 @@ def patch_static_probes(source):
          '"-DLINK_LIBRARIES:STRING=${OPENSSL_LIBRARIES};pthread;dl"'),
     ])
 
+def patch_windows_encoding(source):
+    if os.name != 'nt': return
+    # The NIF's binary string contract is UTF-8. Scope the default byte encoding
+    # to this bundled libarchive, avoiding process/thread locale mutations in BEAM.
+    before = '''static unsigned
+get_current_codepage(void)
+{
+\tchar *locale, *p;
+\tunsigned cp;
+
+\tlocale = setlocale(LC_CTYPE, NULL);
+\tif (locale == NULL)
+\t\treturn (GetACP());
+\tif (locale[0] == 'C' && locale[1] == '\\0')
+\t\treturn (CP_C_LOCALE);
+\tp = strrchr(locale, '.');
+\tif (p == NULL)
+\t\treturn (GetACP());
+\tif ((strcmp(p+1, "utf8") == 0) || (strcmp(p+1, "UTF-8") == 0))
+\t\treturn CP_UTF8;
+\tcp = my_atoi(p+1);
+\tif ((int)cp <= 0)
+\t\treturn (GetACP());
+\treturn (cp);
+}'''
+    after = '''static unsigned
+get_current_codepage(void)
+{
+\t/* Archive.Nif binaries use UTF-8 independently of the host C locale. */
+\treturn CP_UTF8;
+}'''
+    patch_source(source / 'libarchive/archive_string.c', [(before, after)])
+
 def patch_filename_cleanup(source):
     # Upstream skips writer close in FATAL state (including archive_write_fail).
     # Its filename free callback otherwise frees the metadata but leaks the fd.
@@ -137,6 +170,7 @@ def main():
         if name == 'libarchive':
             patch_filename_cleanup(source)
             patch_static_probes(source)
+            patch_windows_encoding(source)
         license_dir = prefix / 'share/archive/licenses'
         license_dir.mkdir(parents=True, exist_ok=True)
         for filename in ['LICENSE', 'LICENSE.txt', 'COPYING', 'COPYING.LESSER', 'COPYING.BSD', 'Copyright']:

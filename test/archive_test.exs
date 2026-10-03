@@ -272,14 +272,26 @@ defmodule ArchiveTest do
     File.write!(file, "body")
     target = if match?({:win32, _}, :os.type()), do: file, else: "original"
     File.ln_s!(target, link)
+    reported_target = File.read_link!(link)
+
+    if match?({:win32, _}, :os.type()),
+      do: assert(File.read!(reported_target) == "body"),
+      else: assert(reported_target == target)
+
     entry = Entry.from_file(link)
     assert entry.stat.type == :symlink
-    assert entry.symlink == target
+    assert entry.symlink == reported_target
     assert entry.data == nil
     Archive.write!([entry], path)
     [result] = Enum.to_list(Archive.reader!(path))
-    assert result.symlink == target
+    assert result.symlink == reported_target
     assert result.stat.type == :symlink
+  end
+
+  test "reads and writes Unicode archive filenames", %{dir: dir} do
+    path = Path.join(dir, "日本語.tar")
+    Archive.write!(entries(), path)
+    assert contents(Archive.reader!(path)) == Enum.map(entries(), &{&1.path, &1.data})
   end
 
   test "validates options and reports corruption instead of truncating success", %{dir: dir} do
