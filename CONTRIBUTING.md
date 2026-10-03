@@ -69,6 +69,9 @@ failed CMake feature probes. Linux static-library probes link pthread and dl for
 the glibc 2.28 baseline. A guarded patch to libarchive 3.8.9's filename writer
 closes its owned descriptor during free after a fatal error; normal close resets
 the descriptor to prevent a second close. Re-audit this patch on libarchive upgrades.
+The Windows build also pins libarchive's internal default byte encoding to UTF-8,
+matching Elixir strings across archive formats and filename I/O. This patch is
+confined to the bundled library and leaves BEAM's process and thread locales alone.
 
 ## Coverage and CI
 
