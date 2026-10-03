@@ -157,6 +157,10 @@ jobs:
         with:
           python-version: '3.12'
           architecture: ${{ runner.os == 'Windows' && 'x64' || runner.arch == 'ARM64' && 'arm64' || 'x64' }}
+      - name: Fetch locked dependencies for installation tests
+        env:
+          MIX_ENV: test
+        run: mix deps.get
       - name: Download, verify, and run from the actual Hex package
         run: python scripts/smoke_precompiled.py
   release:
