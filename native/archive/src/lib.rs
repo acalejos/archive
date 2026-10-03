@@ -8,14 +8,14 @@
 )]
 mod ffi {
     include!(concat!(env!("OUT_DIR"), "/ffi.rs"));
-    pub const AE_IFMT: u32 = ARCHIVE_BIND_AE_IFMT;
-    pub const AE_IFBLK: u32 = ARCHIVE_BIND_AE_IFBLK;
-    pub const AE_IFCHR: u32 = ARCHIVE_BIND_AE_IFCHR;
-    pub const AE_IFDIR: u32 = ARCHIVE_BIND_AE_IFDIR;
-    pub const AE_IFIFO: u32 = ARCHIVE_BIND_AE_IFIFO;
-    pub const AE_IFLNK: u32 = ARCHIVE_BIND_AE_IFLNK;
-    pub const AE_IFREG: u32 = ARCHIVE_BIND_AE_IFREG;
-    pub const AE_IFSOCK: u32 = ARCHIVE_BIND_AE_IFSOCK;
+    pub const AE_IFMT: u32 = ARCHIVE_BIND_AE_IFMT as u32;
+    pub const AE_IFBLK: u32 = ARCHIVE_BIND_AE_IFBLK as u32;
+    pub const AE_IFCHR: u32 = ARCHIVE_BIND_AE_IFCHR as u32;
+    pub const AE_IFDIR: u32 = ARCHIVE_BIND_AE_IFDIR as u32;
+    pub const AE_IFIFO: u32 = ARCHIVE_BIND_AE_IFIFO as u32;
+    pub const AE_IFLNK: u32 = ARCHIVE_BIND_AE_IFLNK as u32;
+    pub const AE_IFREG: u32 = ARCHIVE_BIND_AE_IFREG as u32;
+    pub const AE_IFSOCK: u32 = ARCHIVE_BIND_AE_IFSOCK as u32;
 }
 mod adapters;
 mod generated;
