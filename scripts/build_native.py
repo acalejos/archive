@@ -24,25 +24,46 @@ def verify_libarchive_config(build):
         required.add('HAVE_BCRYPT_H')
     missing = required - enabled
     if missing:
+        log = build / 'CMakeFiles/CMakeError.log'
+        if log.exists():
+            text = log.read_text(errors='replace')
+            for capability in sorted(missing):
+                pos = text.find(capability.removeprefix('HAVE_'))
+                if pos >= 0: print(text[max(0, pos - 200):pos + 3500], file=sys.stderr)
         raise RuntimeError(f'libarchive disabled required bundled capabilities: {sorted(missing)}')
+
+def patch_source(path, replacements):
+    text = path.read_text()
+    for before, after in replacements:
+        if after in text: continue
+        if text.count(before) != 1: raise RuntimeError(f'libarchive patch no longer applies: {path.name}')
+        text = text.replace(before, after, 1)
+    path.write_text(text)
+
+def patch_static_probes(source):
+    if not sys.platform.startswith('linux'): return
+    # Libarchive probes static archives without their transitive system libraries.
+    # Older glibc keeps pthread and dl separate; pass them to the probes themselves
+    # (including the separate crypto try_compile project) rather than global flags.
+    patch_source(source / 'CMakeLists.txt', [
+        ('SET(CMAKE_REQUIRED_LIBRARIES ${ZSTD_LIBRARY})',
+         'SET(CMAKE_REQUIRED_LIBRARIES ${ZSTD_LIBRARY} pthread dl)'),
+        ('SET(CMAKE_REQUIRED_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY})',
+         'SET(CMAKE_REQUIRED_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY} pthread dl)'),
+        ('"-DLINK_LIBRARIES:STRING=${OPENSSL_LIBRARIES}"',
+         '"-DLINK_LIBRARIES:STRING=${OPENSSL_LIBRARIES};pthread;dl"'),
+    ])
 
 def patch_filename_cleanup(source):
     # Upstream skips writer close in FATAL state (including archive_write_fail).
     # Its filename free callback otherwise frees the metadata but leaks the fd.
     # Close in both callbacks, resetting the fd to prevent a second close.
-    path = source / 'libarchive/archive_write_open_filename.c'
-    text = path.read_text()
-    replacements = [
+    patch_source(source / 'libarchive/archive_write_open_filename.c', [
         ('\tif (mine->fd >= 0)\n\t\tclose(mine->fd);',
          '\tif (mine->fd >= 0) {\n\t\tclose(mine->fd);\n\t\tmine->fd = -1;\n\t}'),
         ('\tarchive_mstring_clean(&mine->filename);\n\tfree(mine);',
          '\tif (mine->fd >= 0)\n\t\tclose(mine->fd);\n\tarchive_mstring_clean(&mine->filename);\n\tfree(mine);'),
-    ]
-    for before, after in replacements:
-        if after in text: continue
-        if text.count(before) != 1: raise RuntimeError('libarchive filename cleanup patch no longer applies')
-        text = text.replace(before, after, 1)
-    path.write_text(text)
+    ])
 
 def run(args):
     subprocess.run([str(arg) for arg in args], check=True)
@@ -93,11 +114,6 @@ def main():
       'libxml2': ['-DLIBXML2_WITH_PYTHON=OFF', '-DLIBXML2_WITH_PROGRAMS=OFF', '-DLIBXML2_WITH_TESTS=OFF', '-DLIBXML2_WITH_ICONV=OFF', '-DLIBXML2_WITH_LZMA=OFF', '-DLIBXML2_WITH_ZLIB=OFF'],
       'libarchive': ['-DENABLE_TEST=OFF', '-DENABLE_TAR=OFF', '-DENABLE_CPIO=OFF', '-DENABLE_CAT=OFF', '-DENABLE_UNZIP=OFF', '-DENABLE_LIBB2=OFF', '-DENABLE_LZO=OFF', '-DENABLE_PCREPOSIX=OFF', '-DENABLE_PCRE2POSIX=OFF', '-DENABLE_EXPAT=OFF', '-DENABLE_BSDXML=OFF', '-DENABLE_NETTLE=OFF', '-DENABLE_MBEDTLS=OFF', '-DENABLE_MD=OFF', '-DENABLE_ACL=OFF', '-DENABLE_ICONV=ON', '-DOPENSSL_USE_STATIC_LIBS=TRUE'],
     }
-    if sys.platform.startswith('linux'):
-        # Static zstd/OpenSSL need these transitive libraries in CMake's link
-        # probes too. On glibc 2.28 they are separate from libc; omitting them
-        # silently disables compression/encryption despite finding the archives.
-        options['libarchive'].append('-DCMAKE_C_STANDARD_LIBRARIES=-lpthread -ldl')
     for name, dep in deps.items():
         stamp = out / (name + '.built')
         configuration = [dep['sha256'], common, options[name], os.environ.get('DEP_OPENSSL_ROOT')]
@@ -118,7 +134,9 @@ def main():
                 # Reject absolute/traversing/link entries rather than trusting a tar path.
                 package.extractall(unpack, filter='data')
         source = next(path for path in unpack.iterdir() if path.is_dir())
-        if name == 'libarchive': patch_filename_cleanup(source)
+        if name == 'libarchive':
+            patch_filename_cleanup(source)
+            patch_static_probes(source)
         license_dir = prefix / 'share/archive/licenses'
         license_dir.mkdir(parents=True, exist_ok=True)
         for filename in ['LICENSE', 'LICENSE.txt', 'COPYING', 'COPYING.LESSER', 'COPYING.BSD', 'Copyright']:
