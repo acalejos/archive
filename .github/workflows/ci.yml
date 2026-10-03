@@ -8,7 +8,8 @@ permissions:
   contents: read
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Finish native checks and save their cache; newer commits replace pending runs.
+  cancel-in-progress: false
 jobs:
   test:
     name: ${{ matrix.os }} / Elixir ${{ matrix.elixir }} / OTP ${{ matrix.otp }}

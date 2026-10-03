@@ -127,7 +127,7 @@ install(FILES bzlib.h DESTINATION include)
             names = {'zlib': ('zlibstatic', ['zlibstatic', 'zlibstaticd', 'zs']),
                      'xz': ('lzma', ['lzma', 'liblzma']),
                      'lz4': ('lz4', ['lz4', 'lz4_static']),
-                     'libxml2': ('xml2', ['xml2', 'libxml2'])}
+                     'libxml2': ('xml2', ['xml2', 'libxml2', 'libxml2s'])}
             if name in names:
                 canonical, choices = names[name]
                 source_lib = next((prefix / 'lib' / (n + '.lib') for n in choices
