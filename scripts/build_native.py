@@ -118,8 +118,9 @@ install(FILES bzlib.h DESTINATION include)
         if name == 'libarchive':
             run(['cmake', '--build', build, '--target', 'archive_static', '--parallel', os.environ.get('NUM_JOBS', '4')])
             # Installing the upstream project would also build its shared target.
-            installed = build / 'libarchive' / ('archive_static.lib' if os.name == 'nt' else 'libarchive.a')
-            shutil.copyfile(installed, prefix / 'lib' / installed.name)
+            installed = build / 'libarchive' / ('archive.lib' if os.name == 'nt' else 'libarchive.a')
+            link_name = 'archive_static.lib' if os.name == 'nt' else installed.name
+            shutil.copyfile(installed, prefix / 'lib' / link_name)
         else:
             run(['cmake', '--build', build, '--target', 'install', '--parallel', os.environ.get('NUM_JOBS', '4')])
         if os.name == 'nt':
