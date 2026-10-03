@@ -47,9 +47,9 @@ def main():
     deps = json.loads((ROOT / 'native/dependencies.json').read_text())
     # Never discover developer-machine shared libraries in the precompiled bundle.
     common = ['-G', 'Ninja', '-DCMAKE_BUILD_TYPE=Release', '-DBUILD_SHARED_LIBS=OFF',
-              '-DCMAKE_POSITION_INDEPENDENT_CODE=ON', f'-DCMAKE_INSTALL_PREFIX={prefix}',
-              '-DCMAKE_INSTALL_LIBDIR=lib', f'-DCMAKE_C_COMPILER={args.cc}',
-              f'-DCMAKE_PREFIX_PATH={prefix}', '-DCMAKE_FIND_FRAMEWORK=LAST', '-DCMAKE_IGNORE_PREFIX_PATH=/opt/homebrew;/usr/local']
+              '-DCMAKE_POSITION_INDEPENDENT_CODE=ON', f'-DCMAKE_INSTALL_PREFIX={prefix.as_posix()}',
+              '-DCMAKE_INSTALL_LIBDIR=lib', f'-DCMAKE_C_COMPILER={Path(args.cc).as_posix()}',
+              f'-DCMAKE_PREFIX_PATH={prefix.as_posix()}', '-DCMAKE_FIND_FRAMEWORK=LAST', '-DCMAKE_IGNORE_PREFIX_PATH=/opt/homebrew;/usr/local']
     if os.environ.get('ARCHIVE_CC_ARGS'):
         common += ['-DCMAKE_C_FLAGS=' + os.environ['ARCHIVE_CC_ARGS']]
     if os.environ.get('MACOSX_DEPLOYMENT_TARGET'):
@@ -94,7 +94,7 @@ install(FILES bzlib.h DESTINATION include)
 ''')
         extra = list(options[name])
         if name == 'libarchive':
-            crypto = os.environ['DEP_OPENSSL_ROOT']
+            crypto = Path(os.environ['DEP_OPENSSL_ROOT']).as_posix()
             extra += [f'-DOPENSSL_ROOT_DIR={crypto}', f'-DOPENSSL_INCLUDE_DIR={crypto}/include']
             # Explicitly pin every discovered compression/XML library to static archives.
             extension = '.lib' if os.name == 'nt' else '.a'
@@ -108,10 +108,10 @@ install(FILES bzlib.h DESTINATION include)
                 found = next((p for p in paths if p.exists()), None)
                 if found is None:
                     raise RuntimeError(f'Missing static dependency {cmake_var}: {paths}')
-                extra.append(f'-D{cmake_var}={found}')
+                extra.append(f'-D{cmake_var}={found.as_posix()}')
             for var in ['ZLIB_INCLUDE_DIR','BZIP2_INCLUDE_DIR','LIBLZMA_INCLUDE_DIR','LZ4_INCLUDE_DIR','ZSTD_INCLUDE_DIR']:
-                extra.append(f'-D{var}={prefix}/include')
-            extra.append(f'-DLIBXML2_INCLUDE_DIR={prefix}/include/libxml2')
+                extra.append(f'-D{var}={prefix.as_posix()}/include')
+            extra.append(f'-DLIBXML2_INCLUDE_DIR={prefix.as_posix()}/include/libxml2')
         build = out / ('build-' + name)
         if build.exists(): shutil.rmtree(build)
         run(['cmake', '-S', source / dep['cmake_subdir'], '-B', build, *common, *extra])
