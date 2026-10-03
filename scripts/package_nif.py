@@ -60,7 +60,7 @@ def audit(path, target):
     if 'windows' in target:
         machine, deps = windows_imports(data)
         assert machine == (0xaa64 if arm else 0x8664), 'Wrong PE architecture'
-        allowed = {'kernel32.dll','ntdll.dll','advapi32.dll','bcrypt.dll','crypt32.dll',
+        allowed = {'kernel32.dll','ntdll.dll','advapi32.dll','bcrypt.dll','bcryptprimitives.dll','crypt32.dll',
                    'ws2_32.dll','user32.dll','xmllite.dll','ole32.dll','secur32.dll',
                    'shell32.dll','msvcrt.dll','ucrtbase.dll','vcruntime140.dll','vcruntime140_1.dll'}
         bad = [d for d in deps if d not in allowed and not d.startswith('api-ms-win-')]
