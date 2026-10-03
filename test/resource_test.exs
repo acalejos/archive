@@ -132,7 +132,7 @@ defmodule Archive.ResourceTest do
       assert :ok = N.archive_entry_set_dev(entry, -1)
       assert N.archive_entry_dev(entry) == -1
     else
-      assert_raise ErlangError, fn -> N.archive_entry_set_dev(entry, -1) end
+      assert_raise ArgumentError, fn -> N.archive_entry_set_dev(entry, -1) end
     end
 
     # Libarchive 3.x uses a signed inode argument; negative values unset it.

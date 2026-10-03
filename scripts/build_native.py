@@ -112,7 +112,7 @@ install(FILES bzlib.h DESTINATION include)
             run(['cmake', '--build', build, '--target', 'install', '--parallel', os.environ.get('NUM_JOBS', '4')])
         if os.name == 'nt':
             # Normalize upstream Windows naming before Rust link selection.
-            names = {'zlib': ('zlibstatic', ['zlibstatic', 'zlibstaticd']),
+            names = {'zlib': ('zlibstatic', ['zlibstatic', 'zlibstaticd', 'zs']),
                      'xz': ('lzma', ['lzma', 'liblzma']),
                      'lz4': ('lz4', ['lz4', 'lz4_static']),
                      'libxml2': ('xml2', ['xml2', 'libxml2'])}

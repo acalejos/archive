@@ -18,7 +18,13 @@ crate=ROOT/'native/archive'
 env=os.environ.copy()
 # Cargo's musl configuration must be read from the crate's .cargo directory.
 if 'apple' in a.target:env.setdefault('MACOSX_DEPLOYMENT_TARGET','11.0')
-command=['rustup','run','1.95.0','cargo','build','--locked','--release','--target',a.target,'--message-format=json-render-diagnostics']
+toolchain=['rustup','run','1.95.0']
+host_info=subprocess.check_output([*toolchain,'rustc','-vV'],text=True,env=env)
+host=next(line.removeprefix('host: ') for line in host_info.splitlines() if line.startswith('host: '))
+# On a native musl host, omitting --target applies the crate's dynamic CRT
+# rustflags to build helpers too. Bindgen's helper must dlopen libclang.
+target_args=[] if a.target.endswith('-musl') and host==a.target else ['--target',a.target]
+command=[*toolchain,'cargo','build','--locked','--release',*target_args,'--message-format=json-render-diagnostics']
 with subprocess.Popen(command,cwd=crate,env=env,stdout=subprocess.PIPE,text=True) as child:
     artifact=None;licenses=None
     for line in child.stdout:
@@ -33,7 +39,8 @@ with subprocess.Popen(command,cwd=crate,env=env,stdout=subprocess.PIPE,text=True
     if child.wait():raise SystemExit(child.returncode)
 if artifact is None:raise SystemExit('Cargo did not report an archive_nif library')
 if licenses is None:
-    candidates=list((crate/'target'/a.target/'release/build').glob('archive_nif-*/out/native/install/share/archive/licenses'))
+    build_root=crate/'target'/(a.target if target_args else '')/'release/build'
+    candidates=list(build_root.glob('archive_nif-*/out/native/install/share/archive/licenses'))
     if len(candidates)!=1:raise SystemExit(f'Could not identify license directory: {candidates}')
     licenses=candidates[0]
 # OpenSSL's Apache-2.0 notice accompanies its statically linked vendored build.
