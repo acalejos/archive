@@ -53,6 +53,15 @@ defmodule Archive.Entry do
   @doc "Creates a disk entry with a lazily streamed body, preserving symlinks. Options: `:path` and `:chunk_size`."
   def from_file(file, opts \\ []) do
     stat = File.lstat!(file, time: :posix)
+    # Windows can report type :symlink with regular-file bits in File.Stat.mode.
+    # Native archive formats use the mode bits to decide whether to emit a link.
+    stat =
+      if stat.type == :symlink,
+        do: %{
+          stat
+          | mode: Bitwise.bor(Bitwise.band(stat.mode, 0o7777), Archive.Stat.file_kinds().sym_link)
+        },
+        else: stat
 
     data =
       if stat.type == :regular,
